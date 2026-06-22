@@ -28,19 +28,42 @@
             <h2>Sales</h2>
 
             <div class="card">
-                <h3>Manual Sale Entry</h3>
-                <div class="form-grid">
-                    <input type="text" placeholder="Item Name">
-                    <input type="text" placeholder="Platform">
-                    <input type="number" placeholder="Sale Price">
-                    <input type="number" placeholder="Fees">
-                    <input type="number" placeholder="Shipping">
-                    <input type="number" placeholder="COGS">
-                    <input type="date">
-                    <input type="text" placeholder="Notes">
-                </div>
-                <button class="action-btn">Add Sale</button>
-            </div>
+    <h3>Manual Sale Entry</h3>
+    <div class="form-grid">
+
+        <label>Item Name
+            <input type="text" id="manual-item">
+        </label>
+
+        <label>Quantity
+            <input type="number" id="manual-qty">
+        </label>
+
+        <label>Total Sale Price
+            <input type="number" id="manual-total">
+        </label>
+
+        <label>Selling Cost
+            <input type="number" id="manual-cost">
+        </label>
+
+        <label>COGS
+            <input type="number" id="manual-cogs">
+        </label>
+
+        <label>Date (mm/dd/yyyy)
+            <input type="text" id="manual-date" placeholder="mm/dd/yyyy">
+        </label>
+
+        <label>Notes
+            <input type="text" id="manual-notes">
+        </label>
+
+    </div>
+
+    <button class="action-btn" onclick="addSale()">Add Sale</button>
+</div>
+
 
             <div class="card">
                 <h3>CSV Upload</h3>
