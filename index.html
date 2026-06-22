@@ -69,34 +69,38 @@
         </section>
 
         <!-- SALARY SECTION -->
-        <section id="salary" class="panel">
-            <h2>Salary</h2>
+       <section id="salary" class="panel">
+    <h2>Salary</h2>
 
-            <div class="card">
-                <h3>Monthly Goal</h3>
-                <input type="number" placeholder="Enter Monthly Goal">
-                <button class="action-btn">Update Goal</button>
-            </div>
+    <div class="card">
+        <h3>Monthly Goal</h3>
+        <input type="number" placeholder="Enter Monthly Goal">
+        <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
+    </div>
 
-            <div class="card">
-                <h3>Salary Tracker</h3>
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
-                <p><strong>Paid:</strong> $0</p>
-                <p><strong>Remaining:</strong> $0</p>
-                <button class="action-btn">Pay Full Goal</button>
-            </div>
+    <div class="card">
+        <h3>Salary Tracker</h3>
 
-            <div class="card">
-                <h3>Manual Salary Entry</h3>
-                <div class="form-grid">
-                    <input type="number" placeholder="Amount">
-                    <input type="date">
-                </div>
-                <button class="action-btn">Add Entry</button>
-            </div>
-        </section>
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
+
+        <p><strong>Paid:</strong> $0</p>
+        <p><strong>Remaining:</strong> $0</p>
+
+        <button class="action-btn" onclick="payFullSalary()">Pay Full Goal</button>
+    </div>
+
+    <div class="card">
+        <h3>Manual Salary Entry</h3>
+        <div class="form-grid">
+            <input type="number" placeholder="Amount">
+            <input type="date">
+        </div>
+        <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
+    </div>
+</section>
+
 
         <!-- PURCHASES SECTION -->
         <section id="purchases" class="panel">
