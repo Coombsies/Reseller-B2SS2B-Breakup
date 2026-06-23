@@ -84,6 +84,31 @@ function addSale() {
     Storage.save("sales", sales);
     renderSalesTable();
     updateSummary();
+
+    // CLEAR FORM FIELDS
+    document.getElementById("manual-item").value = "";
+    document.getElementById("manual-qty").value = "";
+    document.getElementById("manual-total").value = "";
+    document.getElementById("manual-cost").value = "";
+    document.getElementById("manual-cogs").value = "";
+    document.getElementById("manual-date").value = "";
+    document.getElementById("manual-notes").value = "";
+
+    // TOAST CONFIRMATION
+    const toast = document.createElement("div");
+    toast.textContent = "Sale added!";
+    toast.style.position = "fixed";
+    toast.style.bottom = "20px";
+    toast.style.right = "20px";
+    toast.style.background = "#4CAF50";
+    toast.style.color = "white";
+    toast.style.padding = "10px 15px";
+    toast.style.borderRadius = "6px";
+    toast.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
+    toast.style.zIndex = "9999";
+    document.body.appendChild(toast);
+
+    setTimeout(() => toast.remove(), 2000);
 }
 
 /* -----------------------------
@@ -164,7 +189,6 @@ function importCSV(file) {
         const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
         const rows = lines.map(line => parseCSVLine(line));
 
-        // Find header row (starts with "Listing title")
         const headerIndex = rows.findIndex(r => r[0] === "Listing title");
         if (headerIndex === -1) {
             alert("CSV format not recognized (no 'Listing title' header).");
@@ -179,9 +203,9 @@ function importCSV(file) {
             if (!item) continue;
 
             const qty = toNumber(r[2]);
-            const totalSale = toNumber(r[3]);      // Total sales (Includes taxes)
-            const sellingCost = toNumber(r[8]);    // Total selling costs
-            const cogs = 0;                        // per your choice
+            const totalSale = toNumber(r[3]);
+            const sellingCost = toNumber(r[8]);
+            const cogs = 0;
             const profit = totalSale - sellingCost - cogs;
 
             sales.push({
@@ -191,8 +215,8 @@ function importCSV(file) {
                 sellingCost,
                 cogs,
                 profit,
-                date: "",      // per your choice (B)
-                notes: ""      // blank for CSV
+                date: "",
+                notes: ""
             });
         }
 
@@ -205,7 +229,6 @@ function importCSV(file) {
     reader.readAsText(file);
 }
 
-/* Helper: basic CSV line splitter (handles quoted commas) */
 function parseCSVLine(line) {
     const result = [];
     let current = "";
@@ -230,7 +253,6 @@ function parseCSVLine(line) {
     return result;
 }
 
-/* Helper: convert currency/number strings to Number */
 function toNumber(str) {
     if (!str) return 0;
     const cleaned = String(str)
