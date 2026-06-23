@@ -162,12 +162,8 @@ function renderSalesTable() {
             <td style="color:${s.profit >= 0 ? '#4CAF50' : '#D9534F'};">
                 $${s.profit.toFixed(2)}
             </td>
-            <td>
-                <button class="action-btn" onclick="editCogs(${index})">Edit COGS</button>
-            </td>
-            <td>
-                <button class="delete-btn" onclick="deleteSale(${index})">✖</button>
-            </td>
+            <td><button class="action-btn" onclick="editCogs(${index})">Edit COGS</button></td>
+            <td><button class="delete-btn" onclick="deleteSale(${index})">✖</button></td>
         `;
 
         tbody.appendChild(row);
@@ -175,7 +171,7 @@ function renderSalesTable() {
 }
 
 /* -----------------------------
-   SALES — CSV IMPORTER
+   CSV IMPORTER
 ----------------------------- */
 function importCSV(file) {
     if (!file) return;
@@ -189,7 +185,7 @@ function importCSV(file) {
 
         const headerIndex = rows.findIndex(r => r[0] === "Listing title");
         if (headerIndex === -1) {
-            alert("CSV format not recognized (no 'Listing title' header).");
+            alert("CSV format not recognized.");
             return;
         }
 
@@ -356,9 +352,7 @@ function addSalaryEntry() {
         return;
     }
 
-    const entry = { amount, date };
-
-    salaryEntries.push(entry);
+    salaryEntries.push({ amount, date });
     Storage.save("salaryEntries", salaryEntries);
 
     updateSalaryTracker();
@@ -383,4 +377,62 @@ function payFullSalary() {
    SALARY — TRACKER UI
 ----------------------------- */
 function updateSalaryTracker() {
-    const paid = salaryEntries.reduce((sum, e) => sum + e.amount, 0
+    const paid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
+    const remaining = Math.max(salaryGoal - paid, 0);
+
+    document.querySelector("#salary p:nth-of-type(1)").innerHTML =
+        `<strong>Paid:</strong> $${paid.toFixed(2)}`;
+    document.querySelector("#salary p:nth-of-type(2)").innerHTML =
+        `<strong>Remaining:</strong> $${remaining.toFixed(2)}`;
+
+    const fill = document.querySelector(".progress-fill");
+    const percent = salaryGoal > 0 ? (paid / salaryGoal) * 100 : 0;
+    fill.style.width = `${Math.min(percent, 100)}%`;
+
+    updateSummary();
+}
+
+/* -----------------------------
+   SUMMARY — CALCULATE TOTALS
+----------------------------- */
+function updateSummary() {
+    const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
+    const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
+    const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
+    const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
+
+    const cards = document.querySelectorAll(".summary-card p");
+
+    cards[0].innerText = `$${totalSales.toFixed(2)}`;
+    cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
+    cards[2].innerText = `$${totalProfit.toFixed(2)}`;
+    cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
+}
+
+/* -----------------------------
+   RESET MONTH
+----------------------------- */
+function resetMonth() {
+    if (!confirm("Reset all monthly data?")) return;
+
+    sales = [];
+    purchases = [];
+    salaryEntries = [];
+
+    Storage.save("sales", sales);
+    Storage.save("purchases", purchases);
+    Storage.save("salaryEntries", salaryEntries);
+
+    renderSalesTable();
+    renderPurchaseTable();
+    updateSalaryTracker();
+    updateSummary();
+}
+
+/* -----------------------------
+   INITIAL LOAD
+----------------------------- */
+renderSalesTable();
+renderPurchaseTable();
+updateSalaryTracker();
+updateSummary();
