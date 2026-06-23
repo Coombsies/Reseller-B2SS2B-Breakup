@@ -1,4 +1,4 @@
-/* ============================================================
+* ============================================================
    RESELLER B2SS2B BREAKUP — CORE APP LOGIC (FINAL)
    ============================================================ */
 
@@ -312,14 +312,12 @@ function renderPurchaseTable() {
             <td>${p.qty}</td>
             <td>$${p.costPerItem.toFixed(2)}</td>
             <td>${p.date}</td>
-            <td>${p.notes || ""}</td>
             <td><button class="delete-btn" onclick="deletePurchase(${index})">✖</button></td>
         `;
 
         tbody.appendChild(row);
     });
 }
-
 
 /* -----------------------------
    PURCHASES — DELETE ENTRY
