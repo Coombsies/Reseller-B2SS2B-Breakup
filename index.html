@@ -88,9 +88,7 @@
                             <th></th>
                         </tr>
                     </thead>
-                    <tbody id="sales-table-body">
-                        <!-- JS will populate -->
-                    </tbody>
+                    <tbody id="sales-table-body"></tbody>
                 </table>
             </div>
         </section>
@@ -135,10 +133,27 @@
             <div class="card">
                 <h3>Add Purchase</h3>
                 <div class="form-grid">
-                    <input type="text" placeholder="Item / Category">
-                    <input type="number" placeholder="Amount">
-                    <input type="date">
-                    <input type="text" placeholder="Notes">
+
+                    <label>Item / Category
+                        <input type="text" id="purchase-item" placeholder="Item / Category">
+                    </label>
+
+                    <label>Total Amount
+                        <input type="number" id="purchase-amount" placeholder="Amount">
+                    </label>
+
+                    <label>Quantity
+                        <input type="number" id="purchase-qty" placeholder="Qty">
+                    </label>
+
+                    <label>Date
+                        <input type="date" id="purchase-date">
+                    </label>
+
+                    <label>Notes
+                        <input type="text" id="purchase-notes" placeholder="Notes">
+                    </label>
+
                 </div>
                 <button class="action-btn" onclick="addPurchase()">Add Purchase</button>
             </div>
@@ -149,14 +164,14 @@
                     <thead>
                         <tr>
                             <th>Item</th>
-                            <th>Amount</th>
+                            <th>Total Cost</th>
+                            <th>Qty</th>
+                            <th>Cost / Item</th>
                             <th>Date</th>
                             <th></th>
                         </tr>
                     </thead>
-                    <tbody id="purchase-table-body">
-                        <!-- JS will populate -->
-                    </tbody>
+                    <tbody id="purchase-table-body"></tbody>
                 </table>
             </div>
         </section>
