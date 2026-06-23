@@ -1,4 +1,4 @@
-* ============================================================
+/* ============================================================
    RESELLER B2SS2B BREAKUP — CORE APP LOGIC (FINAL)
    ============================================================ */
 
@@ -92,21 +92,6 @@ function addSale() {
     document.getElementById("manual-cogs").value = "";
     document.getElementById("manual-date").value = "";
     document.getElementById("manual-notes").value = "";
-
-    const toast = document.createElement("div");
-    toast.textContent = "Sale added!";
-    toast.style.position = "fixed";
-    toast.style.bottom = "20px";
-    toast.style.right = "20px";
-    toast.style.background = "#4CAF50";
-    toast.style.color = "white";
-    toast.style.padding = "10px 15px";
-    toast.style.borderRadius = "6px";
-    toast.style.boxShadow = "0 0 10px rgba(0,0,0,0.3)";
-    toast.style.zIndex = "9999";
-    document.body.appendChild(toast);
-
-    setTimeout(() => toast.remove(), 2000);
 }
 
 /* -----------------------------
@@ -312,6 +297,7 @@ function renderPurchaseTable() {
             <td>${p.qty}</td>
             <td>$${p.costPerItem.toFixed(2)}</td>
             <td>${p.date}</td>
+            <td>${p.notes || ""}</td>
             <td><button class="delete-btn" onclick="deletePurchase(${index})">✖</button></td>
         `;
 
@@ -397,42 +383,4 @@ function updateSalaryTracker() {
 ----------------------------- */
 function updateSummary() {
     const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
-    const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
-    const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
-    const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
-
-    const cards = document.querySelectorAll(".summary-card p");
-
-    cards[0].innerText = `$${totalSales.toFixed(2)}`;
-    cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
-    cards[2].innerText = `$${totalProfit.toFixed(2)}`;
-    cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
-}
-
-/* -----------------------------
-   RESET MONTH
------------------------------ */
-function resetMonth() {
-    if (!confirm("Reset all monthly data?")) return;
-
-    sales = [];
-    purchases = [];
-    salaryEntries = [];
-
-    Storage.save("sales", sales);
-    Storage.save("purchases", purchases);
-    Storage.save("salaryEntries", salaryEntries);
-
-    renderSalesTable();
-    renderPurchaseTable();
-    updateSalaryTracker();
-    updateSummary();
-}
-
-/* -----------------------------
-   INITIAL LOAD
------------------------------ */
-renderSalesTable();
-renderPurchaseTable();
-updateSalaryTracker();
-updateSummary();
+    const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 
