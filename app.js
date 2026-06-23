@@ -267,20 +267,30 @@ function toNumber(str) {
 
 /* -----------------------------
    PURCHASES — ADD ENTRY
+   (UPGRADE #4: qty + auto costPerItem)
 ----------------------------- */
 function addPurchase() {
     const inputs = document.querySelectorAll("#purchases .form-grid input");
+    // Expected order now:
+    // 0: Item
+    // 1: Total Amount
+    // 2: Quantity
+    // 3: Date
+    // 4: Notes
     const item = inputs[0].value.trim();
     const amount = Number(inputs[1].value) || 0;
-    const date = inputs[2].value.trim();
-    const notes = inputs[3].value.trim();
+    const qty = Number(inputs[2].value) || 0;
+    const date = inputs[3].value.trim();
+    const notes = inputs[4].value.trim();
 
-    if (!item || amount <= 0) {
-        alert("Please enter at least Item and Amount.");
+    if (!item || amount <= 0 || qty <= 0) {
+        alert("Please enter at least Item, Total Amount, and Quantity.");
         return;
     }
 
-    const purchase = { item, amount, date, notes };
+    const costPerItem = amount / qty;
+
+    const purchase = { item, amount, qty, costPerItem, date, notes };
 
     purchases.push(purchase);
     Storage.save("purchases", purchases);
@@ -291,6 +301,7 @@ function addPurchase() {
 
 /* -----------------------------
    PURCHASES — RENDER TABLE
+   (shows qty + costPerItem)
 ----------------------------- */
 function renderPurchaseTable() {
     const tbody = document.getElementById("purchase-table-body");
@@ -302,6 +313,8 @@ function renderPurchaseTable() {
         row.innerHTML = `
             <td>${p.item}</td>
             <td>$${p.amount.toFixed(2)}</td>
+            <td>${p.qty || 0}</td>
+            <td>$${(p.costPerItem || 0).toFixed(2)}</td>
             <td>${p.date}</td>
             <td><button class="delete-btn" onclick="deletePurchase(${index})">✖</button></td>
         `;
