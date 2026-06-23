@@ -1,5 +1,5 @@
 /* ============================================================
-   RESELLER B2SS2B BREAKUP — CORE APP LOGIC (FINAL)
+   RESELLER B2SS2B BREAKUP — CORE APP LOGIC (FINAL WORKING)
    ============================================================ */
 
 /* -----------------------------
@@ -383,4 +383,42 @@ function updateSalaryTracker() {
 ----------------------------- */
 function updateSummary() {
     const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
-    const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 
+    const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
+    const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
+    const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
+
+    const cards = document.querySelectorAll(".summary-card p");
+
+    cards[0].innerText = `$${totalSales.toFixed(2)}`;
+    cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
+    cards[2].innerText = `$${totalProfit.toFixed(2)}`;
+    cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
+}
+
+/* -----------------------------
+   RESET MONTH
+----------------------------- */
+function resetMonth() {
+    if (!confirm("Reset all monthly data?")) return;
+
+    sales = [];
+    purchases = [];
+    salaryEntries = [];
+
+    Storage.save("sales", sales);
+    Storage.save("purchases", purchases);
+    Storage.save("salaryEntries", salaryEntries);
+
+    renderSalesTable();
+    renderPurchaseTable();
+    updateSalaryTracker();
+    updateSummary();
+}
+
+/* -----------------------------
+   INITIAL LOAD
+----------------------------- */
+renderSalesTable();
+renderPurchaseTable();
+updateSalaryTracker();
+updateSummary();
