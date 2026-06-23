@@ -27,102 +27,106 @@
         <section id="sales" class="panel active">
             <h2>Sales</h2>
 
+            <!-- MANUAL SALE ENTRY -->
             <div class="card">
-    <h3>Manual Sale Entry</h3>
-    <div class="form-grid">
+                <h3>Manual Sale Entry</h3>
+                <div class="form-grid">
 
-        <label>Item Name
-            <input type="text" id="manual-item">
-        </label>
+                    <label>Item Name
+                        <input type="text" id="manual-item">
+                    </label>
 
-        <label>Quantity
-            <input type="number" id="manual-qty">
-        </label>
+                    <label>Quantity
+                        <input type="number" id="manual-qty">
+                    </label>
 
-        <label>Total Sale Price
-            <input type="number" id="manual-total">
-        </label>
+                    <label>Total Sale Price
+                        <input type="number" id="manual-total">
+                    </label>
 
-        <label>Selling Cost
-            <input type="number" id="manual-cost">
-        </label>
+                    <label>Selling Cost
+                        <input type="number" id="manual-cost">
+                    </label>
 
-        <label>COGS
-            <input type="number" id="manual-cogs">
-        </label>
+                    <label>COGS
+                        <input type="number" id="manual-cogs">
+                    </label>
 
-        <label>Date (mm/dd/yyyy)
-            <input type="text" id="manual-date" placeholder="mm/dd/yyyy">
-        </label>
+                    <label>Date (mm/dd/yyyy)
+                        <input type="text" id="manual-date" placeholder="mm/dd/yyyy">
+                    </label>
 
-        <label>Notes
-            <input type="text" id="manual-notes">
-        </label>
+                    <label>Notes
+                        <input type="text" id="manual-notes">
+                    </label>
 
-    </div>
+                </div>
 
-    <button class="action-btn" onclick="addSale()">Add Sale</button>
-</div>
+                <button class="action-btn" onclick="addSale()">Add Sale</button>
+            </div>
 
-
+            <!-- CSV UPLOAD -->
             <div class="card">
                 <h3>CSV Upload</h3>
                 <div class="upload-zone">Drag & Drop CSV Here</div>
-                <input type="file" accept=".csv">
+                <input type="file" accept=".csv" onchange="importCSV(this.files[0])">
             </div>
 
-           <div class="card">
-    <h3>Sales Table</h3>
-    <table>
-        <thead>
-            <tr>
-                <th>Item</th>
-                <th>Qty</th>
-                <th>Total Sale Price</th>
-                <th>Selling Cost</th>
-                <th>COGS</th>
-                <th>Profit</th>
-            </tr>
-        </thead>
-        <tbody id="sales-table-body">
-            <!-- JS will populate -->
-        </tbody>
-    </table>
-</div>
+            <!-- SALES TABLE -->
+            <div class="card">
+                <h3>Sales Table</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Total Sale Price</th>
+                            <th>Selling Cost</th>
+                            <th>COGS</th>
+                            <th>Profit</th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-table-body">
+                        <!-- JS will populate -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
 
         <!-- SALARY SECTION -->
-       <section id="salary" class="panel">
-    <h2>Salary</h2>
+        <section id="salary" class="panel">
+            <h2>Salary</h2>
 
-    <div class="card">
-        <h3>Monthly Goal</h3>
-        <input type="number" placeholder="Enter Monthly Goal">
-        <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
-    </div>
+            <div class="card">
+                <h3>Monthly Goal</h3>
+                <input type="number" placeholder="Enter Monthly Goal">
+                <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
+            </div>
 
-    <div class="card">
-        <h3>Salary Tracker</h3>
+            <div class="card">
+                <h3>Salary Tracker</h3>
 
-        <div class="progress-bar">
-            <div class="progress-fill"></div>
-        </div>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
 
-        <p><strong>Paid:</strong> $0</p>
-        <p><strong>Remaining:</strong> $0</p>
+                <p><strong>Paid:</strong> $0</p>
+                <p><strong>Remaining:</strong> $0</p>
 
-        <button class="action-btn" onclick="payFullSalary()">Pay Full Goal</button>
-    </div>
+                <button class="action-btn" onclick="payFullSalary()">Pay Full Goal</button>
+            </div>
 
-    <div class="card">
-        <h3>Manual Salary Entry</h3>
-        <div class="form-grid">
-            <input type="number" placeholder="Amount">
-            <input type="date">
-        </div>
-        <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
-    </div>
-</section>
-
+            <div class="card">
+                <h3>Manual Salary Entry</h3>
+                <div class="form-grid">
+                    <input type="number" placeholder="Amount">
+                    <input type="date">
+                </div>
+                <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
+            </div>
+        </section>
 
         <!-- PURCHASES SECTION -->
         <section id="purchases" class="panel">
@@ -136,7 +140,7 @@
                     <input type="date">
                     <input type="text" placeholder="Notes">
                 </div>
-                <button class="action-btn">Add Purchase</button>
+                <button class="action-btn" onclick="addPurchase()">Add Purchase</button>
             </div>
 
             <div class="card">
@@ -180,7 +184,7 @@
                 </div>
             </div>
 
-            <button class="danger-btn">Reset Month</button>
+            <button class="danger-btn" onclick="resetMonth()">Reset Month</button>
         </section>
 
     </main>
