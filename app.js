@@ -1,5 +1,5 @@
 /* ============================================================
-   RESELLER B2SS2B BREAKUP — CORE APP LOGIC (STARTER FRAMEWORK)
+   RESELLER B2SS2B BREAKUP — CORE APP LOGIC (FINAL)
    ============================================================ */
 
 /* -----------------------------
@@ -30,7 +30,13 @@ const Storage = {
         localStorage.setItem(key, JSON.stringify(data));
     },
     load(key, fallback = []) {
-        return JSON.parse(localStorage.getItem(key)) || fallback;
+        const raw = localStorage.getItem(key);
+        if (!raw) return fallback;
+        try {
+            return JSON.parse(raw);
+        } catch {
+            return fallback;
+        }
     },
     clear(key) {
         localStorage.removeItem(key);
@@ -46,27 +52,72 @@ let salaryEntries = Storage.load("salaryEntries");
 let salaryGoal = Storage.load("salaryGoal", 0);
 
 /* -----------------------------
-   SALES — ADD ENTRY
+   SALES — ADD MANUAL ENTRY
 ----------------------------- */
 function addSale() {
-    const inputs = document.querySelectorAll("#sales .form-grid input");
-    const sale = {
-        item: inputs[0].value,
-        platform: inputs[1].value,
-        price: Number(inputs[2].value),
-        fees: Number(inputs[3].value),
-        shipping: Number(inputs[4].value),
-        cogs: Number(inputs[5].value),
-        date: inputs[6].value,
-        notes: inputs[7].value,
-    };
+    const item = document.getElementById("manual-item").value.trim();
+    const qty = Number(document.getElementById("manual-qty").value) || 0;
+    const total = Number(document.getElementById("manual-total").value) || 0;
+    const sellingCost = Number(document.getElementById("manual-cost").value) || 0;
+    const cogs = Number(document.getElementById("manual-cogs").value) || 0;
+    const date = document.getElementById("manual-date").value.trim();
+    const notes = document.getElementById("manual-notes").value.trim();
 
-    sale.profit = sale.price - sale.fees - sale.shipping - sale.cogs;
+    if (!item || qty <= 0 || total <= 0) {
+        alert("Please enter at least Item, Qty, and Total Sale Price.");
+        return;
+    }
 
-    sales.push(sale);
+    const profit = total - sellingCost - cogs;
+
+    sales.push({
+        item,
+        qty,
+        total,
+        sellingCost,
+        cogs,
+        profit,
+        date,
+        notes
+    });
+
     Storage.save("sales", sales);
-
     renderSalesTable();
+    updateSummary();
+}
+
+/* -----------------------------
+   SALES — EDIT COGS (OPTION A)
+----------------------------- */
+function editCogs(index) {
+    const s = sales[index];
+    const current = s.cogs || 0;
+    const input = prompt(`Enter COGS for:\n${s.item}\n(Current: ${current})`, current);
+
+    if (input === null) return;
+
+    const newCogs = Number(input);
+    if (isNaN(newCogs)) {
+        alert("Invalid COGS value.");
+        return;
+    }
+
+    s.cogs = newCogs;
+    s.profit = s.total - s.sellingCost - s.cogs;
+
+    Storage.save("sales", sales);
+    renderSalesTable();
+    updateSummary();
+}
+
+/* -----------------------------
+   SALES — DELETE ENTRY
+----------------------------- */
+function deleteSale(index) {
+    sales.splice(index, 1);
+    Storage.save("sales", sales);
+    renderSalesTable();
+    updateSummary();
 }
 
 /* -----------------------------
@@ -81,28 +132,115 @@ function renderSalesTable() {
 
         row.innerHTML = `
             <td>${s.item}</td>
-            <td>${s.platform}</td>
-            <td>$${s.price.toFixed(2)}</td>
+            <td>${s.qty}</td>
+            <td>$${s.total.toFixed(2)}</td>
+            <td>$${s.sellingCost.toFixed(2)}</td>
+            <td>$${s.cogs.toFixed(2)}</td>
             <td style="color:${s.profit >= 0 ? '#4CAF50' : '#D9534F'};">
                 $${s.profit.toFixed(2)}
             </td>
-            <td>${s.date}</td>
-            <td><button class="delete-btn" onclick="deleteSale(${index})">✖</button></td>
+            <td>
+                <button class="action-btn" onclick="editCogs(${index})">Edit COGS</button>
+            </td>
+            <td>
+                <button class="delete-btn" onclick="deleteSale(${index})">✖</button>
+            </td>
         `;
 
         tbody.appendChild(row);
     });
-
-    updateSummary();
 }
 
 /* -----------------------------
-   SALES — DELETE ENTRY
+   SALES — CSV IMPORTER (EBAY REPORT)
 ----------------------------- */
-function deleteSale(index) {
-    sales.splice(index, 1);
-    Storage.save("sales", sales);
-    renderSalesTable();
+function importCSV(file) {
+    if (!file) return;
+
+    const reader = new FileReader();
+
+    reader.onload = function (e) {
+        const text = e.target.result;
+        const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+        const rows = lines.map(line => parseCSVLine(line));
+
+        // Find header row (starts with "Listing title")
+        const headerIndex = rows.findIndex(r => r[0] === "Listing title");
+        if (headerIndex === -1) {
+            alert("CSV format not recognized (no 'Listing title' header).");
+            return;
+        }
+
+        for (let i = headerIndex + 1; i < rows.length; i++) {
+            const r = rows[i];
+            if (!r || r.length < 9) continue;
+
+            const item = (r[0] || "").trim();
+            if (!item) continue;
+
+            const qty = toNumber(r[2]);
+            const totalSale = toNumber(r[3]);      // Total sales (Includes taxes)
+            const sellingCost = toNumber(r[8]);    // Total selling costs
+            const cogs = 0;                        // per your choice
+            const profit = totalSale - sellingCost - cogs;
+
+            sales.push({
+                item,
+                qty,
+                total: totalSale,
+                sellingCost,
+                cogs,
+                profit,
+                date: "",      // per your choice (B)
+                notes: ""      // blank for CSV
+            });
+        }
+
+        Storage.save("sales", sales);
+        renderSalesTable();
+        updateSummary();
+        alert("CSV Imported Successfully!");
+    };
+
+    reader.readAsText(file);
+}
+
+/* Helper: basic CSV line splitter (handles quoted commas) */
+function parseCSVLine(line) {
+    const result = [];
+    let current = "";
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+
+        if (ch === '"') {
+            inQuotes = !inQuotes;
+            continue;
+        }
+
+        if (ch === "," && !inQuotes) {
+            result.push(current);
+            current = "";
+        } else {
+            current += ch;
+        }
+    }
+    result.push(current);
+    return result;
+}
+
+/* Helper: convert currency/number strings to Number */
+function toNumber(str) {
+    if (!str) return 0;
+    const cleaned = String(str)
+        .replace(/\$/g, "")
+        .replace(/,/g, "")
+        .replace(/\(/g, "-")
+        .replace(/\)/g, "")
+        .trim();
+    const n = Number(cleaned);
+    return isNaN(n) ? 0 : n;
 }
 
 /* -----------------------------
@@ -110,17 +248,23 @@ function deleteSale(index) {
 ----------------------------- */
 function addPurchase() {
     const inputs = document.querySelectorAll("#purchases .form-grid input");
-    const purchase = {
-        item: inputs[0].value,
-        amount: Number(inputs[1].value),
-        date: inputs[2].value,
-        notes: inputs[3].value,
-    };
+    const item = inputs[0].value.trim();
+    const amount = Number(inputs[1].value) || 0;
+    const date = inputs[2].value.trim();
+    const notes = inputs[3].value.trim();
+
+    if (!item || amount <= 0) {
+        alert("Please enter at least Item and Amount.");
+        return;
+    }
+
+    const purchase = { item, amount, date, notes };
 
     purchases.push(purchase);
     Storage.save("purchases", purchases);
 
     renderPurchaseTable();
+    updateSummary();
 }
 
 /* -----------------------------
@@ -142,8 +286,6 @@ function renderPurchaseTable() {
 
         tbody.appendChild(row);
     });
-
-    updateSummary();
 }
 
 /* -----------------------------
@@ -153,6 +295,7 @@ function deletePurchase(index) {
     purchases.splice(index, 1);
     Storage.save("purchases", purchases);
     renderPurchaseTable();
+    updateSummary();
 }
 
 /* -----------------------------
@@ -160,7 +303,7 @@ function deletePurchase(index) {
 ----------------------------- */
 function updateSalaryGoal() {
     const input = document.querySelector("#salary input[type='number']");
-    salaryGoal = Number(input.value);
+    salaryGoal = Number(input.value) || 0;
     Storage.save("salaryGoal", salaryGoal);
     updateSalaryTracker();
 }
@@ -170,10 +313,15 @@ function updateSalaryGoal() {
 ----------------------------- */
 function addSalaryEntry() {
     const inputs = document.querySelectorAll("#salary .form-grid input");
-    const entry = {
-        amount: Number(inputs[0].value),
-        date: inputs[1].value,
-    };
+    const amount = Number(inputs[0].value) || 0;
+    const date = inputs[1].value.trim();
+
+    if (amount <= 0) {
+        alert("Enter a valid salary amount.");
+        return;
+    }
+
+    const entry = { amount, date };
 
     salaryEntries.push(entry);
     Storage.save("salaryEntries", salaryEntries);
@@ -203,8 +351,8 @@ function updateSalaryTracker() {
     const paid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
     const remaining = Math.max(salaryGoal - paid, 0);
 
-    document.querySelector("#salary p:nth-of-type(1)").innerHTML = `<strong>Paid:</strong> $${paid}`;
-    document.querySelector("#salary p:nth-of-type(2)").innerHTML = `<strong>Remaining:</strong> $${remaining}`;
+    document.querySelector("#salary p:nth-of-type(1)").innerHTML = `<strong>Paid:</strong> $${paid.toFixed(2)}`;
+    document.querySelector("#salary p:nth-of-type(2)").innerHTML = `<strong>Remaining:</strong> $${remaining.toFixed(2)}`;
 
     const fill = document.querySelector(".progress-fill");
     const percent = salaryGoal > 0 ? (paid / salaryGoal) * 100 : 0;
@@ -217,7 +365,7 @@ function updateSalaryTracker() {
    SUMMARY — CALCULATE TOTALS
 ----------------------------- */
 function updateSummary() {
-    const totalSales = sales.reduce((sum, s) => sum + s.price, 0);
+    const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
     const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
     const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
     const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
@@ -247,6 +395,7 @@ function resetMonth() {
     renderSalesTable();
     renderPurchaseTable();
     updateSalaryTracker();
+    updateSummary();
 }
 
 /* -----------------------------
