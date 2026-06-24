@@ -95,20 +95,13 @@ function addSale() {
 }
 
 /* -----------------------------
-   SALES — EDIT COGS
+   SALES — INLINE COGS UPDATE
 ----------------------------- */
-function editCogs(index) {
+function updateCogsInline(index, newValue) {
     const s = sales[index];
-    const current = s.cogs || 0;
-    const input = prompt(`Enter COGS for:\n${s.item}\n(Current: ${current})`, current);
+    const newCogs = Number(newValue);
 
-    if (input === null) return;
-
-    const newCogs = Number(input);
-    if (isNaN(newCogs)) {
-        alert("Invalid COGS value.");
-        return;
-    }
+    if (isNaN(newCogs)) return;
 
     s.cogs = newCogs;
     s.profit = s.total - s.sellingCost - s.cogs;
@@ -143,11 +136,16 @@ function renderSalesTable() {
             <td>${s.qty}</td>
             <td>$${s.total.toFixed(2)}</td>
             <td>$${s.sellingCost.toFixed(2)}</td>
-            <td>$${s.cogs.toFixed(2)}</td>
+
+            <td contenteditable="true" 
+                onblur="updateCogsInline(${index}, this.innerText.replace('$',''))">
+                $${s.cogs.toFixed(2)}
+            </td>
+
             <td style="color:${s.profit >= 0 ? '#4CAF50' : '#D9534F'};">
                 $${s.profit.toFixed(2)}
             </td>
-            <td><button class="action-btn" onclick="editCogs(${index})">Edit COGS</button></td>
+
             <td><button class="delete-btn" onclick="deleteSale(${index})">✖</button></td>
         `;
 
@@ -382,17 +380,17 @@ function updateSalaryTracker() {
    SUMMARY — CALCULATE TOTALS
 ----------------------------- */
 function updateSummary() {
-    const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
-    const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
-    const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
-    const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
+   const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
+const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
+const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
+const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
 
-    const cards = document.querySelectorAll(".summary-card p");
+const cards = document.querySelectorAll(".summary-card p");
 
-    cards[0].innerText = `$${totalSales.toFixed(2)}`;
-    cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
-    cards[2].innerText = `$${totalProfit.toFixed(2)}`;
-    cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
+cards[0].innerText = `$${totalSales.toFixed(2)}`;
+cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
+cards[2].innerText = `$${totalProfit.toFixed(2)}`;
+cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
 }
 
 /* -----------------------------
