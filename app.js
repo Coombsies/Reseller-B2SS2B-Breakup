@@ -1,5 +1,5 @@
 /* ============================================================
-   RESELLER B2SS2B BREAKUP — CORE APP LOGIC (FINAL WORKING)
+   RESELLER B2SS2B BREAKUP — CORE APP LOGIC
    ============================================================ */
 
 /* -----------------------------
@@ -327,9 +327,8 @@ function updateSalaryGoal() {
    SALARY — ADD ENTRY
 ----------------------------- */
 function addSalaryEntry() {
-    const inputs = document.querySelectorAll("#salary .form-grid input");
-    const amount = Number(inputs[0].value) || 0;
-    const date = inputs[1].value.trim();
+    const amount = Number(document.getElementById("salary-amount").value) || 0;
+    const date = document.getElementById("salary-date").value.trim();
 
     if (amount <= 0) {
         alert("Enter a valid salary amount.");
@@ -339,22 +338,59 @@ function addSalaryEntry() {
     salaryEntries.push({ amount, date });
     Storage.save("salaryEntries", salaryEntries);
 
+    renderSalaryTable();
     updateSalaryTracker();
 }
 
 /* -----------------------------
-   SALARY — PAY FULL GOAL
+   SALARY — DELETE ENTRY
+----------------------------- */
+function deleteSalaryEntry(index) {
+    salaryEntries.splice(index, 1);
+    Storage.save("salaryEntries", salaryEntries);
+    renderSalaryTable();
+    updateSalaryTracker();
+}
+
+/* -----------------------------
+   SALARY — PAY FULL REMAINING
 ----------------------------- */
 function payFullSalary() {
-    if (salaryGoal <= 0) return;
+    const paid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
+    const remaining = salaryGoal - paid;
+
+    if (remaining <= 0) return;
 
     salaryEntries.push({
-        amount: salaryGoal,
+        amount: remaining,
         date: new Date().toISOString().split("T")[0]
     });
 
     Storage.save("salaryEntries", salaryEntries);
+    renderSalaryTable();
     updateSalaryTracker();
+}
+
+/* -----------------------------
+   SALARY — RENDER TABLE
+----------------------------- */
+function renderSalaryTable() {
+    const tbody = document.getElementById("salary-table-body");
+    tbody.innerHTML = "";
+
+    salaryEntries.forEach((e, index) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${e.date || ""}</td>
+            <td>$${e.amount.toFixed(2)}</td>
+            <td>
+                <button class="delete-btn" onclick="deleteSalaryEntry(${index})">✖</button>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
 }
 
 /* -----------------------------
@@ -380,17 +416,17 @@ function updateSalaryTracker() {
    SUMMARY — CALCULATE TOTALS
 ----------------------------- */
 function updateSummary() {
-   const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
-const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
-const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
-const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
+    const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
+    const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
+    const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
+    const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
 
-const cards = document.querySelectorAll(".summary-card p");
+    const cards = document.querySelectorAll(".summary-card p");
 
-cards[0].innerText = `$${totalSales.toFixed(2)}`;
-cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
-cards[2].innerText = `$${totalProfit.toFixed(2)}`;
-cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
+    cards[0].innerText = `$${totalSales.toFixed(2)}`;
+    cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
+    cards[2].innerText = `$${totalProfit.toFixed(2)}`;
+    cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
 }
 
 /* -----------------------------
@@ -409,6 +445,7 @@ function resetMonth() {
 
     renderSalesTable();
     renderPurchaseTable();
+    renderSalaryTable();
     updateSalaryTracker();
     updateSummary();
 }
@@ -418,5 +455,6 @@ function resetMonth() {
 ----------------------------- */
 renderSalesTable();
 renderPurchaseTable();
+renderSalaryTable();
 updateSalaryTracker();
 updateSummary();
