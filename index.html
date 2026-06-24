@@ -1,460 +1,220 @@
-/* ============================================================
-   RESELLER B2SS2B BREAKUP — CORE APP LOGIC
-   ============================================================ */
-
-/* -----------------------------
-   SECTION NAVIGATION
------------------------------ */
-const navButtons = document.querySelectorAll(".nav-btn");
-const panels = document.querySelectorAll(".panel");
-
-navButtons.forEach(btn => {
-    btn.addEventListener("click", () => {
-        navButtons.forEach(b => b.classList.remove("active"));
-        btn.classList.add("active");
-
-        const target = btn.dataset.section;
-
-        panels.forEach(panel => {
-            panel.classList.remove("active");
-            if (panel.id === target) panel.classList.add("active");
-        });
-    });
-});
-
-/* -----------------------------
-   LOCAL STORAGE WRAPPER
------------------------------ */
-const Storage = {
-    save(key, data) {
-        localStorage.setItem(key, JSON.stringify(data));
-    },
-    load(key, fallback = []) {
-        const raw = localStorage.getItem(key);
-        if (!raw) return fallback;
-        try {
-            return JSON.parse(raw);
-        } catch {
-            return fallback;
-        }
-    },
-    clear(key) {
-        localStorage.removeItem(key);
-    }
-};
-
-/* -----------------------------
-   DATA MODELS
------------------------------ */
-let sales = Storage.load("sales");
-let purchases = Storage.load("purchases");
-let salaryEntries = Storage.load("salaryEntries");
-let salaryGoal = Storage.load("salaryGoal", 0);
-
-/* -----------------------------
-   SALES — ADD MANUAL ENTRY
------------------------------ */
-function addSale() {
-    const item = document.getElementById("manual-item").value.trim();
-    const qty = Number(document.getElementById("manual-qty").value) || 0;
-    const total = Number(document.getElementById("manual-total").value) || 0;
-    const sellingCost = Number(document.getElementById("manual-cost").value) || 0;
-    const cogs = Number(document.getElementById("manual-cogs").value) || 0;
-    const date = document.getElementById("manual-date").value.trim();
-    const notes = document.getElementById("manual-notes").value.trim();
-
-    if (!item || qty <= 0 || total <= 0) {
-        alert("Please enter at least Item, Qty, and Total Sale Price.");
-        return;
-    }
-
-    const profit = total - sellingCost - cogs;
-
-    sales.push({
-        item,
-        qty,
-        total,
-        sellingCost,
-        cogs,
-        profit,
-        date,
-        notes
-    });
-
-    Storage.save("sales", sales);
-    renderSalesTable();
-    updateSummary();
-
-    document.getElementById("manual-item").value = "";
-    document.getElementById("manual-qty").value = "";
-    document.getElementById("manual-total").value = "";
-    document.getElementById("manual-cost").value = "";
-    document.getElementById("manual-cogs").value = "";
-    document.getElementById("manual-date").value = "";
-    document.getElementById("manual-notes").value = "";
-}
-
-/* -----------------------------
-   SALES — INLINE COGS UPDATE
------------------------------ */
-function updateCogsInline(index, newValue) {
-    const s = sales[index];
-    const newCogs = Number(newValue);
-
-    if (isNaN(newCogs)) return;
-
-    s.cogs = newCogs;
-    s.profit = s.total - s.sellingCost - s.cogs;
-
-    Storage.save("sales", sales);
-    renderSalesTable();
-    updateSummary();
-}
-
-/* -----------------------------
-   SALES — DELETE ENTRY
------------------------------ */
-function deleteSale(index) {
-    sales.splice(index, 1);
-    Storage.save("sales", sales);
-    renderSalesTable();
-    updateSummary();
-}
-
-/* -----------------------------
-   SALES — RENDER TABLE
------------------------------ */
-function renderSalesTable() {
-    const tbody = document.getElementById("sales-table-body");
-    tbody.innerHTML = "";
-
-    sales.forEach((s, index) => {
-        const row = document.createElement("tr");
-
-        row.innerHTML = `
-            <td>${s.item}</td>
-            <td>${s.qty}</td>
-            <td>$${s.total.toFixed(2)}</td>
-            <td>$${s.sellingCost.toFixed(2)}</td>
-
-            <td contenteditable="true" 
-                onblur="updateCogsInline(${index}, this.innerText.replace('$',''))">
-                $${s.cogs.toFixed(2)}
-            </td>
-
-            <td style="color:${s.profit >= 0 ? '#4CAF50' : '#D9534F'};">
-                $${s.profit.toFixed(2)}
-            </td>
-
-            <td><button class="delete-btn" onclick="deleteSale(${index})">✖</button></td>
-        `;
-
-        tbody.appendChild(row);
-    });
-}
-
-/* -----------------------------
-   CSV IMPORTER
------------------------------ */
-function importCSV(file) {
-    if (!file) return;
-
-    const reader = new FileReader();
-
-    reader.onload = function (e) {
-        const text = e.target.result;
-        const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-        const rows = lines.map(line => parseCSVLine(line));
-
-        const headerIndex = rows.findIndex(r => r[0] === "Listing title");
-        if (headerIndex === -1) {
-            alert("CSV format not recognized.");
-            return;
-        }
-
-        for (let i = headerIndex + 1; i < rows.length; i++) {
-            const r = rows[i];
-            if (!r || r.length < 9) continue;
-
-            const item = (r[0] || "").trim();
-            if (!item) continue;
-
-            const qty = toNumber(r[2]);
-            const totalSale = toNumber(r[3]);
-            const sellingCost = toNumber(r[8]);
-            const cogs = 0;
-            const profit = totalSale - sellingCost - cogs;
-
-            sales.push({
-                item,
-                qty,
-                total: totalSale,
-                sellingCost,
-                cogs,
-                profit,
-                date: "",
-                notes: ""
-            });
-        }
-
-        Storage.save("sales", sales);
-        renderSalesTable();
-        updateSummary();
-        alert("CSV Imported Successfully!");
-    };
-
-    reader.readAsText(file);
-}
-
-function parseCSVLine(line) {
-    const result = [];
-    let current = "";
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-        const ch = line[i];
-
-        if (ch === '"') {
-            inQuotes = !inQuotes;
-            continue;
-        }
-
-        if (ch === "," && !inQuotes) {
-            result.push(current);
-            current = "";
-        } else {
-            current += ch;
-        }
-    }
-    result.push(current);
-    return result;
-}
-
-function toNumber(str) {
-    if (!str) return 0;
-    const cleaned = String(str)
-        .replace(/\$/g, "")
-        .replace(/,/g, "")
-        .replace(/\(/g, "-")
-        .replace(/\)/g, "")
-        .trim();
-    const n = Number(cleaned);
-    return isNaN(n) ? 0 : n;
-}
-
-/* -----------------------------
-   PURCHASES — ADD ENTRY
------------------------------ */
-function addPurchase() {
-    const item = document.getElementById("purchase-item").value.trim();
-    const amount = Number(document.getElementById("purchase-amount").value) || 0;
-    const qty = Number(document.getElementById("purchase-qty").value) || 0;
-    const date = document.getElementById("purchase-date").value.trim();
-    const notes = document.getElementById("purchase-notes").value.trim();
-
-    if (!item || amount <= 0 || qty <= 0) {
-        alert("Please enter Item, Amount, and Quantity.");
-        return;
-    }
-
-    const costPerItem = amount / qty;
-
-    purchases.push({
-        item,
-        amount,
-        qty,
-        costPerItem,
-        date,
-        notes
-    });
-
-    Storage.save("purchases", purchases);
-    renderPurchaseTable();
-    updateSummary();
-
-    document.getElementById("purchase-item").value = "";
-    document.getElementById("purchase-amount").value = "";
-    document.getElementById("purchase-qty").value = "";
-    document.getElementById("purchase-date").value = "";
-    document.getElementById("purchase-notes").value = "";
-}
-
-/* -----------------------------
-   PURCHASES — RENDER TABLE
------------------------------ */
-function renderPurchaseTable() {
-    const tbody = document.getElementById("purchase-table-body");
-    tbody.innerHTML = "";
-
-    purchases.forEach((p, index) => {
-        const row = document.createElement("tr");
-
-        row.innerHTML = `
-            <td>${p.item}</td>
-            <td>$${p.amount.toFixed(2)}</td>
-            <td>${p.qty}</td>
-            <td>$${p.costPerItem.toFixed(2)}</td>
-            <td>${p.date}</td>
-            <td>${p.notes || ""}</td>
-            <td><button class="delete-btn" onclick="deletePurchase(${index})">✖</button></td>
-        `;
-
-        tbody.appendChild(row);
-    });
-}
-
-/* -----------------------------
-   PURCHASES — DELETE ENTRY
------------------------------ */
-function deletePurchase(index) {
-    purchases.splice(index, 1);
-    Storage.save("purchases", purchases);
-    renderPurchaseTable();
-    updateSummary();
-}
-
-/* -----------------------------
-   SALARY — UPDATE GOAL
------------------------------ */
-function updateSalaryGoal() {
-    const input = document.querySelector("#salary input[type='number']");
-    salaryGoal = Number(input.value) || 0;
-    Storage.save("salaryGoal", salaryGoal);
-    updateSalaryTracker();
-}
-
-/* -----------------------------
-   SALARY — ADD ENTRY
------------------------------ */
-function addSalaryEntry() {
-    const amount = Number(document.getElementById("salary-amount").value) || 0;
-    const date = document.getElementById("salary-date").value.trim();
-
-    if (amount <= 0) {
-        alert("Enter a valid salary amount.");
-        return;
-    }
-
-    salaryEntries.push({ amount, date });
-    Storage.save("salaryEntries", salaryEntries);
-
-    renderSalaryTable();
-    updateSalaryTracker();
-}
-
-/* -----------------------------
-   SALARY — DELETE ENTRY
------------------------------ */
-function deleteSalaryEntry(index) {
-    salaryEntries.splice(index, 1);
-    Storage.save("salaryEntries", salaryEntries);
-    renderSalaryTable();
-    updateSalaryTracker();
-}
-
-/* -----------------------------
-   SALARY — PAY FULL REMAINING
------------------------------ */
-function payFullSalary() {
-    const paid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
-    const remaining = salaryGoal - paid;
-
-    if (remaining <= 0) return;
-
-    salaryEntries.push({
-        amount: remaining,
-        date: new Date().toISOString().split("T")[0]
-    });
-
-    Storage.save("salaryEntries", salaryEntries);
-    renderSalaryTable();
-    updateSalaryTracker();
-}
-
-/* -----------------------------
-   SALARY — RENDER TABLE
------------------------------ */
-function renderSalaryTable() {
-    const tbody = document.getElementById("salary-table-body");
-    tbody.innerHTML = "";
-
-    salaryEntries.forEach((e, index) => {
-        const row = document.createElement("tr");
-
-        row.innerHTML = `
-            <td>${e.date || ""}</td>
-            <td>$${e.amount.toFixed(2)}</td>
-            <td>
-                <button class="delete-btn" onclick="deleteSalaryEntry(${index})">✖</button>
-            </td>
-        `;
-
-        tbody.appendChild(row);
-    });
-}
-
-/* -----------------------------
-   SALARY — TRACKER UI
------------------------------ */
-function updateSalaryTracker() {
-    const paid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
-    const remaining = Math.max(salaryGoal - paid, 0);
-
-    document.querySelector("#salary p:nth-of-type(1)").innerHTML =
-        `<strong>Paid:</strong> $${paid.toFixed(2)}`;
-    document.querySelector("#salary p:nth-of-type(2)").innerHTML =
-        `<strong>Remaining:</strong> $${remaining.toFixed(2)}`;
-
-    const fill = document.querySelector(".progress-fill");
-    const percent = salaryGoal > 0 ? (paid / salaryGoal) * 100 : 0;
-    fill.style.width = `${Math.min(percent, 100)}%`;
-
-    updateSummary();
-}
-
-/* -----------------------------
-   SUMMARY — CALCULATE TOTALS
------------------------------ */
-function updateSummary() {
-    const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
-    const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
-    const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
-    const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
-
-    const cards = document.querySelectorAll(".summary-card p");
-
-    cards[0].innerText = `$${totalSales.toFixed(2)}`;
-    cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
-    cards[2].innerText = `$${totalProfit.toFixed(2)}`;
-    cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
-}
-
-/* -----------------------------
-   RESET MONTH
------------------------------ */
-function resetMonth() {
-    if (!confirm("Reset all monthly data?")) return;
-
-    sales = [];
-    purchases = [];
-    salaryEntries = [];
-
-    Storage.save("sales", sales);
-    Storage.save("purchases", purchases);
-    Storage.save("salaryEntries", salaryEntries);
-
-    renderSalesTable();
-    renderPurchaseTable();
-    renderSalaryTable();
-    updateSalaryTracker();
-    updateSummary();
-}
-
-/* -----------------------------
-   INITIAL LOAD
------------------------------ */
-renderSalesTable();
-renderPurchaseTable();
-renderSalaryTable();
-updateSalaryTracker();
-updateSummary();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reseller B2SS2B Breakup</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="logo">B2SS2B Breakup</div>
+        <div class="nav-links">
+            <button class="nav-btn active" data-section="sales">Sales</button>
+            <button class="nav-btn" data-section="salary">Salary</button>
+            <button class="nav-btn" data-section="purchases">Purchases</button>
+            <button class="nav-btn" data-section="summary">Summary</button>
+        </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main>
+
+        <!-- SALES SECTION -->
+        <section id="sales" class="panel active">
+            <h2>Sales</h2>
+
+            <div class="card">
+                <h3>Manual Sale Entry</h3>
+                <div class="form-grid">
+
+                    <label>Item Name
+                        <input type="text" id="manual-item">
+                    </label>
+
+                    <label>Quantity
+                        <input type="number" id="manual-qty">
+                    </label>
+
+                    <label>Total Sale Price
+                        <input type="number" id="manual-total">
+                    </label>
+
+                    <label>Selling Cost
+                        <input type="number" id="manual-cost">
+                    </label>
+
+                    <label>COGS
+                        <input type="number" id="manual-cogs">
+                    </label>
+
+                    <label>Date
+                        <input type="date" id="manual-date">
+                    </label>
+
+                    <label>Notes
+                        <input type="text" id="manual-notes">
+                    </label>
+
+                </div>
+
+                <button class="action-btn" onclick="addSale()">Add Sale</button>
+            </div>
+
+            <div class="card">
+                <h3>CSV Upload</h3>
+                <div class="upload-zone">Drag & Drop CSV Here</div>
+                <input type="file" accept=".csv" onchange="importCSV(this.files[0])">
+            </div>
+
+            <div class="card">
+                <h3>Sales Table</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Total Sale Price</th>
+                            <th>Selling Cost</th>
+                            <th>COGS</th>
+                            <th>Profit</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SALARY SECTION -->
+        <section id="salary" class="panel">
+            <h2>Salary</h2>
+
+            <div class="card">
+                <h3>Monthly Goal</h3>
+                <input type="number" placeholder="Enter Monthly Goal">
+                <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
+            </div>
+
+            <div class="card">
+                <h3>Salary Tracker</h3>
+
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
+
+                <p><strong>Paid:</strong> $0</p>
+                <p><strong>Remaining:</strong> $0</p>
+
+                <button class="action-btn" onclick="payFullSalary()">Pay Full Goal</button>
+            </div>
+
+            <div class="card">
+                <h3>Manual Salary Entry</h3>
+                <div class="form-grid">
+                    <input type="number" id="salary-amount" placeholder="Amount">
+                    <input type="date" id="salary-date">
+                </div>
+                <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
+            </div>
+
+            <div class="card">
+                <h3>Salary Payment History</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Paid On</th>
+                            <th>Amount Paid</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="salary-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PURCHASES SECTION -->
+        <section id="purchases" class="panel">
+            <h2>Purchases</h2>
+
+            <div class="card">
+                <h3>Add Purchase</h3>
+                <div class="form-grid">
+
+                    <label>Item / Category
+                        <input type="text" id="purchase-item" placeholder="Item / Category">
+                    </label>
+
+                    <label>Total Amount
+                        <input type="number" id="purchase-amount" placeholder="Amount">
+                    </label>
+
+                    <label>Quantity
+                        <input type="number" id="purchase-qty" placeholder="Qty">
+                    </label>
+
+                    <label>Date
+                        <input type="date" id="purchase-date">
+                    </label>
+
+                    <label>Notes
+                        <input type="text" id="purchase-notes" placeholder="Notes">
+                    </label>
+
+                </div>
+                <button class="action-btn" onclick="addPurchase()">Add Purchase</button>
+            </div>
+
+            <div class="card">
+                <h3>Purchase History</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Total Cost</th>
+                            <th>Qty</th>
+                            <th>Cost / Item</th>
+                            <th>Date</th>
+                            <th>Notes</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchase-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SUMMARY SECTION -->
+        <section id="summary" class="panel">
+            <h2>Monthly Summary</h2>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>Total Sales</h3>
+                    <p>$0</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total COGS</h3>
+                    <p>$0</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Profit</h3>
+                    <p>$0</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Salary Paid</h3>
+                    <p>$0</p>
+                </div>
+            </div>
+
+            <button class="danger-btn" onclick="resetMonth()">Reset Month</button>
+        </section>
+
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
