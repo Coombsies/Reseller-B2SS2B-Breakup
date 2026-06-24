@@ -115,10 +115,24 @@
             <div class="card">
                 <h3>Manual Salary Entry</h3>
                 <div class="form-grid">
-                    <input type="number" placeholder="Amount">
-                    <input type="date">
+                    <input type="number" id="salary-amount" placeholder="Amount">
+                    <input type="date" id="salary-date">
                 </div>
                 <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
+            </div>
+
+            <div class="card">
+                <h3>Salary Payment History</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Paid On</th>
+                            <th>Amount Paid</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="salary-table-body"></tbody>
+                </table>
             </div>
         </section>
 
