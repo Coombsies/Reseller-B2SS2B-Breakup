@@ -48,6 +48,7 @@ const Storage = {
 ----------------------------- */
 let sales = Storage.load("sales");
 let purchases = Storage.load("purchases");
+let recurringExpenses = Storage.load("recurringExpenses");
 let salaryEntries = Storage.load("salaryEntries");
 let salaryGoal = Storage.load("salaryGoal", 0);
 
@@ -314,79 +315,63 @@ function deletePurchase(index) {
 }
 
 /* -----------------------------
-   SALARY — UPDATE GOAL
+   RECURRING — ADD ENTRY
 ----------------------------- */
-function updateSalaryGoal() {
-    const input = document.querySelector("#salary input[type='number']");
-    salaryGoal = Number(input.value) || 0;
-    Storage.save("salaryGoal", salaryGoal);
-    updateSalaryTracker();
-}
+function addRecurring() {
+    const name = document.getElementById("rec-name").value.trim();
+    const amount = Number(document.getElementById("rec-amount").value) || 0;
+    const dueDay = Number(document.getElementById("rec-due").value) || 0;
+    const notes = document.getElementById("rec-notes").value.trim();
 
-/* -----------------------------
-   SALARY — ADD ENTRY
------------------------------ */
-function addSalaryEntry() {
-    const amount = Number(document.getElementById("salary-amount").value) || 0;
-    const date = document.getElementById("salary-date").value.trim();
-
-    if (amount <= 0) {
-        alert("Enter a valid salary amount.");
+    if (!name || amount <= 
+           if (!name || amount <= 0 || dueDay <= 0 || dueDay > 31) {
+        alert("Please enter Name, Amount, and a valid Due Day (1–31).");
         return;
     }
 
-    salaryEntries.push({ amount, date });
-    Storage.save("salaryEntries", salaryEntries);
-
-    renderSalaryTable();
-    updateSalaryTracker();
-}
-
-/* -----------------------------
-   SALARY — DELETE ENTRY
------------------------------ */
-function deleteSalaryEntry(index) {
-    salaryEntries.splice(index, 1);
-    Storage.save("salaryEntries", salaryEntries);
-    renderSalaryTable();
-    updateSalaryTracker();
-}
-
-/* -----------------------------
-   SALARY — PAY FULL REMAINING
------------------------------ */
-function payFullSalary() {
-    const paid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
-    const remaining = salaryGoal - paid;
-
-    if (remaining <= 0) return;
-
-    salaryEntries.push({
-        amount: remaining,
-        date: new Date().toISOString().split("T")[0]
+    recurringExpenses.push({
+        name,
+        amount,
+        dueDay,
+        notes
     });
 
-    Storage.save("salaryEntries", salaryEntries);
-    renderSalaryTable();
-    updateSalaryTracker();
+    Storage.save("recurringExpenses", recurringExpenses);
+    renderRecurringTable();
+    updateSummary();
+
+    document.getElementById("rec-name").value = "";
+    document.getElementById("rec-amount").value = "";
+    document.getElementById("rec-due").value = "";
+    document.getElementById("rec-notes").value = "";
 }
 
 /* -----------------------------
-   SALARY — RENDER TABLE
+   RECURRING — DELETE ENTRY
 ----------------------------- */
-function renderSalaryTable() {
-    const tbody = document.getElementById("salary-table-body");
+function deleteRecurring(index) {
+    recurringExpenses.splice(index, 1);
+    Storage.save("recurringExpenses", recurringExpenses);
+    renderRecurringTable();
+    updateSummary();
+}
+
+/* -----------------------------
+   RECURRING — RENDER TABLE
+----------------------------- */
+function renderRecurringTable() {
+    const tbody = document.getElementById("recurring-table-body");
     tbody.innerHTML = "";
 
-    salaryEntries.forEach((e, index) => {
+    recurringExpenses.forEach((r, index) => {
         const row = document.createElement("tr");
 
         row.innerHTML = `
-            <td>${e.date || ""}</td>
-            <td>$${e.amount.toFixed(2)}</td>
-            <td>
-                <button class="delete-btn" onclick="deleteSalaryEntry(${index})">✖</button>
-            </td>
+            <td>${r.name}</td>
+            <td>$${r.amount.toFixed(2)}</td>
+            <td>${r.dueDay}</td>
+            <td>${r.notes || ""}</td>
+            <td><button class="delete-btn" onclick="deleteRecurring(${index})">✖</button></td>
         `;
 
         tbody.appendChild(row);
@@ -418,14 +403,20 @@ function updateSalaryTracker() {
 function updateSummary() {
     const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
     const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
-    const totalProfit = sales.reduce((sum, s) => sum + s.profit, 0);
+    const totalProfitSales = sales.reduce((sum, s) => sum + s.profit, 0);
+
+    const totalPurchases = purchases.reduce((sum, p) => sum + p.amount, 0);
+    const totalRecurring = recurringExpenses.reduce((sum, r) => sum + r.amount, 0);
+
     const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
+
+    const netProfit = totalProfitSales - totalPurchases - totalRecurring - salaryPaid;
 
     const cards = document.querySelectorAll(".summary-card p");
 
     cards[0].innerText = `$${totalSales.toFixed(2)}`;
     cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
-    cards[2].innerText = `$${totalProfit.toFixed(2)}`;
+    cards[2].innerText = `$${netProfit.toFixed(2)}`;
     cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
 }
 
@@ -445,6 +436,7 @@ function resetMonth() {
 
     renderSalesTable();
     renderPurchaseTable();
+    renderRecurringTable();
     renderSalaryTable();
     updateSalaryTracker();
     updateSummary();
@@ -455,6 +447,8 @@ function resetMonth() {
 ----------------------------- */
 renderSalesTable();
 renderPurchaseTable();
+renderRecurringTable();
 renderSalaryTable();
 updateSalaryTracker();
 updateSummary();
+ 
