@@ -51,6 +51,7 @@ let purchases = Storage.load("purchases");
 let recurringExpenses = Storage.load("recurringExpenses");
 let salaryEntries = Storage.load("salaryEntries");
 let salaryGoal = Storage.load("salaryGoal", 0);
+let archiveMonths = Storage.load("archiveMonths");
 
 /* -----------------------------
    SALES — ADD MANUAL ENTRY
@@ -315,7 +316,7 @@ function deletePurchase(index) {
 }
 
 /* -----------------------------
-   RECURRING — ADD ENTRY (FIXED)
+   RECURRING — ADD ENTRY
 ----------------------------- */
 function addRecurring() {
     const name = document.getElementById("rec-name").value.trim();
@@ -344,6 +345,7 @@ function addRecurring() {
     document.getElementById("rec-due").value = "";
     document.getElementById("rec-notes").value = "";
 }
+
 /* -----------------------------
    RECURRING — DELETE ENTRY
 ----------------------------- */
@@ -377,6 +379,17 @@ function renderRecurringTable() {
 }
 
 /* -----------------------------
+   SALARY — UPDATE GOAL
+----------------------------- */
+function updateSalaryGoal() {
+    const input = document.getElementById("salary-goal-input");
+    const val = Number(input.value) || 0;
+    salaryGoal = val;
+    Storage.save("salaryGoal", salaryGoal);
+    updateSalaryTracker();
+}
+
+/* -----------------------------
    SALARY — ADD ENTRY
 ----------------------------- */
 function addSalaryEntry() {
@@ -393,6 +406,9 @@ function addSalaryEntry() {
 
     renderSalaryTable();
     updateSalaryTracker();
+
+    document.getElementById("salary-amount").value = "";
+    document.getElementById("salary-date").value = "";
 }
 
 /* -----------------------------
@@ -425,7 +441,7 @@ function payFullSalary() {
 }
 
 /* -----------------------------
-   SALARY — RENDER TABLE (FIXED)
+   SALARY — RENDER TABLE
 ----------------------------- */
 function renderSalaryTable() {
     const tbody = document.getElementById("salary-table-body");
@@ -480,16 +496,113 @@ function updateSummary() {
 
     const netProfit = totalProfitSales - totalPurchases - totalRecurring - salaryPaid;
 
-    const cards = document.querySelectorAll(".summary-card p");
+    const sumTotalSalesEl = document.getElementById("sumTotalSales");
+    const sumTotalCOGSEl = document.getElementById("sumTotalCOGS");
+    const sumTotalProfitSalesEl = document.getElementById("sumTotalProfitSales");
+    const sumTotalPurchasesEl = document.getElementById("sumTotalPurchases");
+    const sumTotalRecurringEl = document.getElementById("sumTotalRecurring");
+    const sumSalaryPaidEl = document.getElementById("sumSalaryPaid");
+    const sumNetProfitEl = document.getElementById("sumNetProfit");
+    const sum75El = document.getElementById("sum75");
+    const sum25El = document.getElementById("sum25");
 
-    cards[0].innerText = `$${totalSales.toFixed(2)}`;
-    cards[1].innerText = `$${totalCOGS.toFixed(2)}`;
-    cards[2].innerText = `$${netProfit.toFixed(2)}`;
-    cards[3].innerText = `$${salaryPaid.toFixed(2)}`;
+    if (sumTotalSalesEl) sumTotalSalesEl.textContent = `$${totalSales.toFixed(2)}`;
+    if (sumTotalCOGSEl) sumTotalCOGSEl.textContent = `$${totalCOGS.toFixed(2)}`;
+    if (sumTotalProfitSalesEl) sumTotalProfitSalesEl.textContent = `$${totalProfitSales.toFixed(2)}`;
+    if (sumTotalPurchasesEl) sumTotalPurchasesEl.textContent = `$${totalPurchases.toFixed(2)}`;
+    if (sumTotalRecurringEl) sumTotalRecurringEl.textContent = `$${totalRecurring.toFixed(2)}`;
+    if (sumSalaryPaidEl) sumSalaryPaidEl.textContent = `$${salaryPaid.toFixed(2)}`;
+
+    if (sumNetProfitEl) {
+        sumNetProfitEl.textContent = `$${netProfit.toFixed(2)}`;
+        sumNetProfitEl.style.color = netProfit >= 0 ? "#4CAF50" : "#D9534F";
+    }
+
+    const seventyFive = netProfit * 0.75;
+    const twentyFive = netProfit * 0.25;
+
+    if (sum75El) sum75El.textContent = `$${seventyFive.toFixed(2)}`;
+    if (sum25El) sum25El.textContent = `$${twentyFive.toFixed(2)}`;
 }
 
 /* -----------------------------
-   RESET MONTH
+   FINALIZE MONTH (ARCHIVE)
+----------------------------- */
+function finalizeMonth() {
+    if (!confirm("Are you sure you want to finalize this month? This will reset Sales, Purchases, and Salary data.")) return;
+
+    const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
+    const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
+    const totalProfitSales = sales.reduce((sum, s) => sum + s.profit, 0);
+    const totalPurchases = purchases.reduce((sum, p) => sum + p.amount, 0);
+    const totalRecurring = recurringExpenses.reduce((sum, r) => sum + r.amount, 0);
+    const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
+    const netProfit = totalProfitSales - totalPurchases - totalRecurring - salaryPaid;
+
+    const seventyFive = netProfit * 0.75;
+    const twentyFive = netProfit * 0.25;
+
+    archiveMonths.push({
+        date: new Date().toLocaleDateString(),
+        totals: {
+            totalSales,
+            totalCOGS,
+            totalProfitSales,
+            totalPurchases,
+            totalRecurring,
+            salaryPaid,
+            netProfit,
+            seventyFive,
+            twentyFive
+        }
+    });
+
+    Storage.save("archiveMonths", archiveMonths);
+
+    // Reset monthly data but keep recurring expenses
+    sales = [];
+    purchases = [];
+    salaryEntries = [];
+
+    Storage.save("sales", sales);
+    Storage.save("purchases", purchases);
+    Storage.save("salaryEntries", salaryEntries);
+
+    renderSalesTable();
+    renderPurchaseTable();
+    renderSalaryTable();
+    updateSalaryTracker();
+    updateSummary();
+    renderArchive();
+
+    alert("Month finalized and archived.");
+}
+
+/* -----------------------------
+   ARCHIVE — RENDER
+----------------------------- */
+function renderArchive() {
+    const container = document.getElementById("archive-list");
+    if (!container) return;
+
+    if (!archiveMonths || archiveMonths.length === 0) {
+        container.innerHTML = "<p>No months archived yet.</p>";
+        return;
+    }
+
+    container.innerHTML = archiveMonths.map(m => `
+        <div class="archive-month">
+            <h4>${m.date}</h4>
+            <p><strong>Sales:</strong> $${m.totals.totalSales.toFixed(2)}</p>
+            <p><strong>Net Profit:</strong> $${m.totals.netProfit.toFixed(2)}</p>
+            <p><strong>75% Sourcing:</strong> $${m.totals.seventyFive.toFixed(2)}</p>
+            <p><strong>25% Savings:</strong> $${m.totals.twentyFive.toFixed(2)}</p>
+        </div>
+    `).join("");
+}
+
+/* -----------------------------
+   RESET MONTH (manual)
 ----------------------------- */
 function resetMonth() {
     if (!confirm("Reset all monthly data?")) return;
@@ -519,3 +632,12 @@ renderRecurringTable();
 renderSalaryTable();
 updateSalaryTracker();
 updateSummary();
+renderArchive();
+
+/* -----------------------------
+   WIRE FINALIZE BUTTON
+----------------------------- */
+const finalizeBtn = document.getElementById("finalizeMonthBtn");
+if (finalizeBtn) {
+    finalizeBtn.addEventListener("click", finalizeMonth);
+}
