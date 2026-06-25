@@ -487,42 +487,27 @@ function updateSalaryTracker() {
 function updateSummary() {
     const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
     const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
-    const totalProfitSales = sales.reduce((sum, s) => sum + s.profit, 0);
+    const salesProfit = sales.reduce((sum, s) => sum + s.profit, 0);
 
     const totalPurchases = purchases.reduce((sum, p) => sum + p.amount, 0);
     const totalRecurring = recurringExpenses.reduce((sum, r) => sum + r.amount, 0);
-
     const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
 
-    const netProfit = totalProfitSales - totalPurchases - totalRecurring - salaryPaid;
+    const netProfit = salesProfit - totalPurchases - totalRecurring - salaryPaid;
 
-    const sumTotalSalesEl = document.getElementById("sumTotalSales");
-    const sumTotalCOGSEl = document.getElementById("sumTotalCOGS");
-    const sumTotalProfitSalesEl = document.getElementById("sumTotalProfitSales");
-    const sumTotalPurchasesEl = document.getElementById("sumTotalPurchases");
-    const sumTotalRecurringEl = document.getElementById("sumTotalRecurring");
-    const sumSalaryPaidEl = document.getElementById("sumSalaryPaid");
-    const sumNetProfitEl = document.getElementById("sumNetProfit");
-    const sum75El = document.getElementById("sum75");
-    const sum25El = document.getElementById("sum25");
+    document.getElementById("sumTotalSales").textContent = `$${totalSales.toFixed(2)}`;
+    document.getElementById("sumTotalCOGS").textContent = `$${totalCOGS.toFixed(2)}`;
+    document.getElementById("sumSalesProfit").textContent = `$${salesProfit.toFixed(2)}`;
+    document.getElementById("sumTotalPurchases").textContent = `$${totalPurchases.toFixed(2)}`;
+    document.getElementById("sumTotalRecurring").textContent = `$${totalRecurring.toFixed(2)}`;
+    document.getElementById("sumSalaryPaid").textContent = `$${salaryPaid.toFixed(2)}`;
 
-    if (sumTotalSalesEl) sumTotalSalesEl.textContent = `$${totalSales.toFixed(2)}`;
-    if (sumTotalCOGSEl) sumTotalCOGSEl.textContent = `$${totalCOGS.toFixed(2)}`;
-    if (sumTotalProfitSalesEl) sumTotalProfitSalesEl.textContent = `$${totalProfitSales.toFixed(2)}`;
-    if (sumTotalPurchasesEl) sumTotalPurchasesEl.textContent = `$${totalPurchases.toFixed(2)}`;
-    if (sumTotalRecurringEl) sumTotalRecurringEl.textContent = `$${totalRecurring.toFixed(2)}`;
-    if (sumSalaryPaidEl) sumSalaryPaidEl.textContent = `$${salaryPaid.toFixed(2)}`;
+    const netEl = document.getElementById("sumNetProfit");
+    netEl.textContent = `$${netProfit.toFixed(2)}`;
+    netEl.style.color = netProfit >= 0 ? "#4CAF50" : "#D9534F";
 
-    if (sumNetProfitEl) {
-        sumNetProfitEl.textContent = `$${netProfit.toFixed(2)}`;
-        sumNetProfitEl.style.color = netProfit >= 0 ? "#4CAF50" : "#D9534F";
-    }
-
-    const seventyFive = netProfit * 0.75;
-    const twentyFive = netProfit * 0.25;
-
-    if (sum75El) sum75El.textContent = `$${seventyFive.toFixed(2)}`;
-    if (sum25El) sum25El.textContent = `$${twentyFive.toFixed(2)}`;
+    document.getElementById("sum75").textContent = `$${(netProfit * 0.75).toFixed(2)}`;
+    document.getElementById("sum25").textContent = `$${(netProfit * 0.25).toFixed(2)}`;
 }
 
 /* -----------------------------
@@ -533,11 +518,11 @@ function finalizeMonth() {
 
     const totalSales = sales.reduce((sum, s) => sum + s.total, 0);
     const totalCOGS = sales.reduce((sum, s) => sum + s.cogs, 0);
-    const totalProfitSales = sales.reduce((sum, s) => sum + s.profit, 0);
+    const salesProfit = sales.reduce((sum, s) => sum + s.profit, 0);
     const totalPurchases = purchases.reduce((sum, p) => sum + p.amount, 0);
     const totalRecurring = recurringExpenses.reduce((sum, r) => sum + r.amount, 0);
     const salaryPaid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
-    const netProfit = totalProfitSales - totalPurchases - totalRecurring - salaryPaid;
+    const netProfit = salesProfit - totalPurchases - totalRecurring - salaryPaid;
 
     const seventyFive = netProfit * 0.75;
     const twentyFive = netProfit * 0.25;
@@ -547,7 +532,7 @@ function finalizeMonth() {
         totals: {
             totalSales,
             totalCOGS,
-            totalProfitSales,
+            salesProfit,
             totalPurchases,
             totalRecurring,
             salaryPaid,
@@ -633,11 +618,3 @@ renderSalaryTable();
 updateSalaryTracker();
 updateSummary();
 renderArchive();
-
-/* -----------------------------
-   WIRE FINALIZE BUTTON
------------------------------ */
-const finalizeBtn = document.getElementById("finalizeMonthBtn");
-if (finalizeBtn) {
-    finalizeBtn.addEventListener("click", finalizeMonth);
-}
