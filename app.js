@@ -303,6 +303,47 @@ function renderPurchaseTable() {
         tbody.appendChild(row);
     });
 }
+
+/* -----------------------------
+   PURCHASES — DELETE ENTRY
+----------------------------- */
+function deletePurchase(index) {
+    purchases.splice(index, 1);
+    Storage.save("purchases", purchases);
+    renderPurchaseTable();
+    updateSummary();
+}
+
+/* -----------------------------
+   RECURRING — ADD ENTRY (FIXED)
+----------------------------- */
+function addRecurring() {
+    const name = document.getElementById("rec-name").value.trim();
+    const amount = Number(document.getElementById("rec-amount").value) || 0;
+    const dueDay = Number(document.getElementById("rec-due").value) || 0;
+    const notes = document.getElementById("rec-notes").value.trim();
+
+    if (!name || amount <= 0 || dueDay < 1 || dueDay > 31) {
+        alert("Please enter Name, Amount, and a valid Due Day (1–31).");
+        return;
+    }
+
+    recurringExpenses.push({
+        name,
+        amount,
+        dueDay,
+        notes
+    });
+
+    Storage.save("recurringExpenses", recurringExpenses);
+    renderRecurringTable();
+    updateSummary();
+
+    document.getElementById("rec-name").value = "";
+    document.getElementById("rec-amount").value = "";
+    document.getElementById("rec-due").value = "";
+    document.getElementById("rec-notes").value = "";
+}
 /* -----------------------------
    RECURRING — DELETE ENTRY
 ----------------------------- */
