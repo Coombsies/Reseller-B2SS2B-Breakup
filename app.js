@@ -303,48 +303,6 @@ function renderPurchaseTable() {
         tbody.appendChild(row);
     });
 }
-
-/* -----------------------------
-   PURCHASES — DELETE ENTRY
------------------------------ */
-function deletePurchase(index) {
-    purchases.splice(index, 1);
-    Storage.save("purchases", purchases);
-    renderPurchaseTable();
-    updateSummary();
-}
-
-/* -----------------------------
-   RECURRING — ADD ENTRY
------------------------------ */
-function addRecurring() {
-    const name = document.getElementById("rec-name").value.trim();
-    const amount = Number(document.getElementById("rec-amount").value) || 0;
-    const dueDay = Number(document.getElementById("rec-due").value) || 0;
-    const notes = document.getElementById("rec-notes").value.trim();
-
-           if (!name || amount <= 0 || dueDay <= 0 || dueDay > 31) {
-        alert("Please enter Name, Amount, and a valid Due Day (1–31).");
-        return;
-    }
-
-    recurringExpenses.push({
-        name,
-        amount,
-        dueDay,
-        notes
-    });
-
-    Storage.save("recurringExpenses", recurringExpenses);
-    renderRecurringTable();
-    updateSummary();
-
-    document.getElementById("rec-name").value = "";
-    document.getElementById("rec-amount").value = "";
-    document.getElementById("rec-due").value = "";
-    document.getElementById("rec-notes").value = "";
-}
-
 /* -----------------------------
    RECURRING — DELETE ENTRY
 ----------------------------- */
@@ -371,6 +329,76 @@ function renderRecurringTable() {
             <td>${r.dueDay}</td>
             <td>${r.notes || ""}</td>
             <td><button class="delete-btn" onclick="deleteRecurring(${index})">✖</button></td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+/* -----------------------------
+   SALARY — ADD ENTRY
+----------------------------- */
+function addSalaryEntry() {
+    const amount = Number(document.getElementById("salary-amount").value) || 0;
+    const date = document.getElementById("salary-date").value.trim();
+
+    if (amount <= 0) {
+        alert("Enter a valid salary amount.");
+        return;
+    }
+
+    salaryEntries.push({ amount, date });
+    Storage.save("salaryEntries", salaryEntries);
+
+    renderSalaryTable();
+    updateSalaryTracker();
+}
+
+/* -----------------------------
+   SALARY — DELETE ENTRY
+----------------------------- */
+function deleteSalaryEntry(index) {
+    salaryEntries.splice(index, 1);
+    Storage.save("salaryEntries", salaryEntries);
+    renderSalaryTable();
+    updateSalaryTracker();
+}
+
+/* -----------------------------
+   SALARY — PAY FULL REMAINING
+----------------------------- */
+function payFullSalary() {
+    const paid = salaryEntries.reduce((sum, e) => sum + e.amount, 0);
+    const remaining = salaryGoal - paid;
+
+    if (remaining <= 0) return;
+
+    salaryEntries.push({
+        amount: remaining,
+        date: new Date().toISOString().split("T")[0]
+    });
+
+    Storage.save("salaryEntries", salaryEntries);
+    renderSalaryTable();
+    updateSalaryTracker();
+}
+
+/* -----------------------------
+   SALARY — RENDER TABLE (FIXED)
+----------------------------- */
+function renderSalaryTable() {
+    const tbody = document.getElementById("salary-table-body");
+    tbody.innerHTML = "";
+
+    salaryEntries.forEach((e, index) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${e.date || ""}</td>
+            <td>$${e.amount.toFixed(2)}</td>
+            <td>
+                <button class="delete-btn" onclick="deleteSalaryEntry(${index})">✖</button>
+            </td>
         `;
 
         tbody.appendChild(row);
@@ -450,4 +478,3 @@ renderRecurringTable();
 renderSalaryTable();
 updateSalaryTracker();
 updateSummary();
- 
