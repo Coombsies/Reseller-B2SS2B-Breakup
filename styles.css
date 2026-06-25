@@ -98,17 +98,16 @@ th, td {
     border-bottom: 1px solid #0F0F0F20;
 }
 
-/* SUMMARY DASHBOARD */
-.summary-dashboard {
+/* SUMMARY GRID */
+.summary-grid {
     display: grid;
-    grid-template-columns: repeat(2, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 15px;
-    margin-bottom: 20px;
 }
 
 .summary-card {
     background: #FAFAFA;
-    padding: 16px;
+    padding: 20px;
     border: 1px solid #0F0F0F20;
     border-radius: 6px;
     text-align: center;
@@ -122,58 +121,6 @@ th, td {
 .summary-card p {
     margin-top: 8px;
     font-size: 1.2rem;
-}
-
-/* NET PROFIT ROW */
-.summary-net-row {
-    margin-bottom: 20px;
-}
-
-.net-card {
-    background: #FAFAFA;
-    padding: 18px;
-    border: 1px solid #0F0F0F20;
-    border-radius: 6px;
-    text-align: center;
-}
-
-/* 75/25 SPLIT */
-.split-container {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(160px, 1fr));
-    gap: 15px;
-    margin-bottom: 20px;
-}
-
-.split-card {
-    background: #FAFAFA;
-    padding: 16px;
-    border: 1px solid #0F0F0F20;
-    border-radius: 6px;
-    text-align: center;
-}
-
-.split-card h3 {
-    margin: 0;
-    font-size: 15px;
-}
-
-.split-card p {
-    margin-top: 8px;
-    font-size: 1.2rem;
-}
-
-/* FINALIZE BUTTON */
-.finalize-btn {
-    width: 100%;
-    padding: 14px;
-    background: #D9534F;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 1rem;
-    cursor: pointer;
-    margin-bottom: 20px;
 }
 
 /* ARCHIVE */
