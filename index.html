@@ -232,8 +232,7 @@
         <section id="summary" class="panel">
             <h2>Monthly Summary</h2>
 
-            <!-- DASHBOARD -->
-            <div class="summary-dashboard">
+            <div class="summary-grid">
                 <div class="summary-card">
                     <h3>Total Sales</h3>
                     <p id="sumTotalSales">$0.00</p>
@@ -243,15 +242,15 @@
                     <p id="sumTotalCOGS">$0.00</p>
                 </div>
                 <div class="summary-card">
-                    <h3>Total Sales Profit</h3>
-                    <p id="sumTotalProfitSales">$0.00</p>
+                    <h3>Sales Profit</h3>
+                    <p id="sumSalesProfit">$0.00</p>
                 </div>
                 <div class="summary-card">
                     <h3>Total Purchases</h3>
                     <p id="sumTotalPurchases">$0.00</p>
                 </div>
                 <div class="summary-card">
-                    <h3>Total Recurring Bills</h3>
+                    <h3>Recurring Bills</h3>
                     <p id="sumTotalRecurring">$0.00</p>
                 </div>
                 <div class="summary-card">
@@ -260,29 +259,24 @@
                 </div>
             </div>
 
-            <!-- NET PROFIT + 75/25 -->
-            <div class="summary-net-row">
-                <div class="summary-card net-card">
-                    <h3>Final Net Profit</h3>
-                    <p id="sumNetProfit">$0.00</p>
-                </div>
+            <div class="summary-card" style="margin-top:20px;">
+                <h3>Final Net Profit</h3>
+                <p id="sumNetProfit">$0.00</p>
             </div>
 
-            <div class="split-container">
-                <div class="split-card">
-                    <h3>75% Sourcing Budget</h3>
+            <div class="summary-grid" style="margin-top:20px;">
+                <div class="summary-card">
+                    <h3>75% Sourcing</h3>
                     <p id="sum75">$0.00</p>
                 </div>
-                <div class="split-card">
-                    <h3>25% Business Savings</h3>
+                <div class="summary-card">
+                    <h3>25% Savings</h3>
                     <p id="sum25">$0.00</p>
                 </div>
             </div>
 
-            <!-- FINALIZE MONTH -->
-            <button id="finalizeMonthBtn" class="finalize-btn">Finalize Month</button>
+            <button class="danger-btn" onclick="finalizeMonth()">Finalize Month</button>
 
-            <!-- ARCHIVE -->
             <div class="card">
                 <h3>Month Archive</h3>
                 <div id="archive-list"></div>
