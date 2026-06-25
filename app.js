@@ -1,5 +1,5 @@
 /* ============================================================
-   RESELLER B2SS2B BREAKUP — CORE APP LOGIC
+   RESELLER B2SS2B BREAKUP — CORE APP LOGIC (WITH LINKING)
    ============================================================ */
 
 /* -----------------------------
@@ -54,6 +54,48 @@ let salaryGoal = Storage.load("salaryGoal", 0);
 let archiveMonths = Storage.load("archiveMonths");
 
 /* -----------------------------
+   DATA NORMALIZATION (BACKWARD COMPAT)
+----------------------------- */
+function normalizeData() {
+    // Ensure purchases have id and remainingQty
+    purchases = purchases.map(p => {
+        if (!p.id) {
+            p.id = crypto.randomUUID();
+        }
+        if (typeof p.remainingQty !== "number") {
+            // If no remainingQty stored, assume full qty is remaining
+            p.remainingQty = typeof p.qty === "number" ? p.qty : 0;
+        }
+        return p;
+    });
+
+    // Ensure sales have id, purchaseId, autoCogs
+    sales = sales.map(s => {
+        if (!s.id) {
+            s.id = crypto.randomUUID();
+        }
+        if (typeof s.purchaseId === "undefined") {
+            s.purchaseId = null;
+        }
+        if (typeof s.autoCogs === "undefined") {
+            // If COGS was manually entered before, treat as manual (false)
+            s.autoCogs = false;
+        }
+        return s;
+    });
+
+    Storage.save("purchases", purchases);
+    Storage.save("sales", sales);
+}
+
+/* -----------------------------
+   HELPER — FIND PURCHASE BY ID
+----------------------------- */
+function findPurchaseById(id) {
+    return purchases.find(p => p.id === id) || null;
+}
+
+/* -----------------------------
    SALES — ADD MANUAL ENTRY
 ----------------------------- */
 function addSale() {
@@ -73,6 +115,7 @@ function addSale() {
     const profit = total - sellingCost - cogs;
 
     sales.push({
+        id: crypto.randomUUID(),
         item,
         qty,
         total,
@@ -80,7 +123,9 @@ function addSale() {
         cogs,
         profit,
         date,
-        notes
+        notes,
+        purchaseId: null,
+        autoCogs: cogs === 0 // if user didn't enter COGS, treat as auto later
     });
 
     Storage.save("sales", sales);
@@ -107,6 +152,7 @@ function updateCogsInline(index, newValue) {
 
     s.cogs = newCogs;
     s.profit = s.total - s.sellingCost - s.cogs;
+    s.autoCogs = false; // user manually overrode COGS
 
     Storage.save("sales", sales);
     renderSalesTable();
@@ -114,12 +160,92 @@ function updateCogsInline(index, newValue) {
 }
 
 /* -----------------------------
+   SALES — LINK PURCHASE TO SALE
+----------------------------- */
+function linkPurchaseToSale(saleIndex, purchaseId) {
+    const sale = sales[saleIndex];
+    const purchase = findPurchaseById(purchaseId);
+
+    if (!sale || !purchase) return;
+
+    const qty = sale.qty || 0;
+
+    if (purchase.remainingQty < qty) {
+        alert("Not enough remaining quantity in that purchase to cover this sale.");
+        return;
+    }
+
+    // If sale was previously linked, restore old purchase remainingQty first
+    if (sale.purchaseId) {
+        const oldPurchase = findPurchaseById(sale.purchaseId);
+        if (oldPurchase) {
+            oldPurchase.remainingQty += qty;
+        }
+    }
+
+    // Link to new purchase
+    sale.purchaseId = purchase.id;
+    sale.autoCogs = true;
+
+    // Auto COGS = costPerItem * qty
+    sale.cogs = purchase.costPerItem * qty;
+    sale.profit = sale.total - sale.sellingCost - sale.cogs;
+
+    // Deplete inventory
+    purchase.remainingQty -= qty;
+
+    Storage.save("sales", sales);
+    Storage.save("purchases", purchases);
+    renderSalesTable();
+    renderPurchaseTable();
+    updateSummary();
+}
+
+/* -----------------------------
+   SALES — UNLINK PURCHASE FROM SALE
+----------------------------- */
+function unlinkPurchaseFromSale(saleIndex) {
+    const sale = sales[saleIndex];
+    if (!sale || !sale.purchaseId) return;
+
+    const purchase = findPurchaseById(sale.purchaseId);
+    const qty = sale.qty || 0;
+
+    if (purchase) {
+        purchase.remainingQty += qty;
+    }
+
+    sale.purchaseId = null;
+    sale.autoCogs = false;
+    sale.cogs = 0;
+    sale.profit = sale.total - sale.sellingCost - sale.cogs;
+
+    Storage.save("sales", sales);
+    Storage.save("purchases", purchases);
+    renderSalesTable();
+    renderPurchaseTable();
+    updateSummary();
+}
+
+/* -----------------------------
    SALES — DELETE ENTRY
 ----------------------------- */
 function deleteSale(index) {
+    const s = sales[index];
+
+    // If linked to a purchase, restore remainingQty
+    if (s && s.purchaseId) {
+        const purchase = findPurchaseById(s.purchaseId);
+        if (purchase) {
+            purchase.remainingQty += (s.qty || 0);
+        }
+    }
+
     sales.splice(index, 1);
     Storage.save("sales", sales);
+    Storage.save("purchases", purchases);
     renderSalesTable();
+    renderPurchaseTable();
     updateSummary();
 }
 
@@ -130,8 +256,23 @@ function renderSalesTable() {
     const tbody = document.getElementById("sales-table-body");
     tbody.innerHTML = "";
 
+    // Build purchase options (global pool, remainingQty > 0)
+    const purchaseOptions = purchases
+        .filter(p => p.remainingQty > 0)
+        .map(p => ({
+            id: p.id,
+            label: `${p.item} — ${p.remainingQty} left — $${p.costPerItem.toFixed(2)} ea`
+        }));
+
     sales.forEach((s, index) => {
         const row = document.createElement("tr");
+
+        const linkedPurchase = s.purchaseId ? findPurchaseById(s.purchaseId) : null;
+        const linkLabel = linkedPurchase
+            ? `${linkedPurchase.item} — ${linkedPurchase.remainingQty} left — $${linkedPurchase.costPerItem.toFixed(2)} ea`
+            : "Link purchase";
+
+        const purchaseSelectId = `purchase-select-${index}`;
 
         row.innerHTML = `
             <td>${s.item}</td>
@@ -144,6 +285,18 @@ function renderSalesTable() {
                 $${s.cogs.toFixed(2)}
             </td>
 
+            <td>
+                <select id="${purchaseSelectId}" onchange="handlePurchaseSelectChange(${index}, this.value)">
+                    <option value="">${linkLabel}</option>
+                    ${purchaseOptions.map(po => `
+                        <option value="${po.id}" ${linkedPurchase && linkedPurchase.id === po.id ? "selected" : ""}>
+                            ${po.label}
+                        </option>
+                    `).join("")}
+                </select>
+                ${s.purchaseId ? `<button class="delete-btn" style="margin-left:4px;" onclick="unlinkPurchaseFromSale(${index})">Unlink</button>` : ""}
+            </td>
+
             <td style="color:${s.profit >= 0 ? '#4CAF50' : '#D9534F'};">
                 $${s.profit.toFixed(2)}
             </td>
@@ -153,6 +306,18 @@ function renderSalesTable() {
 
         tbody.appendChild(row);
     });
+}
+
+/* -----------------------------
+   SALES — HANDLE DROPDOWN CHANGE
+----------------------------- */
+function handlePurchaseSelectChange(saleIndex, purchaseId) {
+    if (!purchaseId) {
+        // If user selects blank, treat as unlink
+        unlinkPurchaseFromSale(saleIndex);
+    } else {
+        linkPurchaseToSale(saleIndex, purchaseId);
+    }
 }
 
 /* -----------------------------
@@ -188,6 +353,7 @@ function importCSV(file) {
             const profit = totalSale - sellingCost - cogs;
 
             sales.push({
+                id: crypto.randomUUID(),
                 item,
                 qty,
                 total: totalSale,
@@ -195,7 +361,9 @@ function importCSV(file) {
                 cogs,
                 profit,
                 date: "",
-                notes: ""
+                notes: "",
+                purchaseId: null,
+                autoCogs: true
             });
         }
 
@@ -262,9 +430,11 @@ function addPurchase() {
     const costPerItem = amount / qty;
 
     purchases.push({
+        id: crypto.randomUUID(),
         item,
         amount,
         qty,
+        remainingQty: qty,
         costPerItem,
         date,
         notes
@@ -296,6 +466,7 @@ function renderPurchaseTable() {
             <td>$${p.amount.toFixed(2)}</td>
             <td>${p.qty}</td>
             <td>$${p.costPerItem.toFixed(2)}</td>
+            <td>${typeof p.remainingQty === "number" ? p.remainingQty : p.qty}</td>
             <td>${p.date}</td>
             <td>${p.notes || ""}</td>
             <td><button class="delete-btn" onclick="deletePurchase(${index})">✖</button></td>
@@ -611,6 +782,7 @@ function resetMonth() {
 /* -----------------------------
    INITIAL LOAD
 ----------------------------- */
+normalizeData();
 renderSalesTable();
 renderPurchaseTable();
 renderRecurringTable();
