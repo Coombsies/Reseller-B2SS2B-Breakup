@@ -323,7 +323,6 @@ function addRecurring() {
     const dueDay = Number(document.getElementById("rec-due").value) || 0;
     const notes = document.getElementById("rec-notes").value.trim();
 
-    if (!name || amount <= 
            if (!name || amount <= 0 || dueDay <= 0 || dueDay > 31) {
         alert("Please enter Name, Amount, and a valid Due Day (1–31).");
         return;
