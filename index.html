@@ -168,6 +168,47 @@
                 <button class="action-btn" onclick="addPurchase()">Add Purchase</button>
             </div>
 
+            <!-- NEW: RECURRING EXPENSES -->
+            <div class="card">
+                <h3>Monthly Recurring Expenses</h3>
+                <div class="form-grid">
+
+                    <label>Name
+                        <input type="text" id="rec-name" placeholder="Expense Name">
+                    </label>
+
+                    <label>Amount
+                        <input type="number" id="rec-amount" placeholder="Amount">
+                    </label>
+
+                    <label>Due Day (1–31)
+                        <input type="number" id="rec-due" min="1" max="31" placeholder="Day">
+                    </label>
+
+                    <label>Notes
+                        <input type="text" id="rec-notes" placeholder="Notes">
+                    </label>
+
+                </div>
+                <button class="action-btn" onclick="addRecurring()">Add Recurring Expense</button>
+            </div>
+
+            <div class="card">
+                <h3>Recurring Expenses</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount</th>
+                            <th>Due Day</th>
+                            <th>Notes</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="recurring-table-body"></tbody>
+                </table>
+            </div>
+
             <div class="card">
                 <h3>Purchase History</h3>
                 <table>
