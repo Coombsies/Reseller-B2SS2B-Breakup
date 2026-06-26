@@ -705,6 +705,39 @@ function renderParentPurchaseTable() {
     });
 }
 
+function addParentPurchase() {
+    const sourceName = document.getElementById("parent-source-name").value.trim();
+    const date = document.getElementById("parent-date").value;
+
+    if (!sourceName || !date) {
+        alert("Enter Source Name and Date.");
+        return;
+    }
+
+    const parent = {
+        id: crypto.randomUUID(),
+        sourceName,
+        date,
+        buyerPremiumPercent: 0,
+        buyerPremiumAmount: 0,
+        totalHammer: 0,
+        totalPremium: 0,
+        totalCost: 0,
+        totalQty: 0,
+        costPerItem: 0,
+        subPurchases: []
+    };
+
+    parentPurchases.push(parent);
+    Storage.save("parentPurchases", parentPurchases);
+
+    renderParentPurchaseTable();
+
+    // Clear inputs
+    document.getElementById("parent-source-name").value = "";
+    document.getElementById("parent-date").value = "";
+}
+
 /* -----------------------------
    SELECT PARENT PURCHASE
 ----------------------------- */
@@ -1173,3 +1206,4 @@ renderSalaryTable();
 updateSalaryTracker();
 updateSummary();
 renderArchive();
+window.addParentPurchase = addParentPurchase;
