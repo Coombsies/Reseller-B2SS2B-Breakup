@@ -705,7 +705,8 @@ function renderParentPurchaseTable() {
     });
 }
 function addParentPurchase() {
-    const sourceName = document.getElementById("parent-source-name").value.trim();
+   window.addParentPurchase = addParentPurchase;
+   const sourceName = document.getElementById("parent-source-name").value.trim();
     const date = document.getElementById("parent-date").value;
 
     if (!sourceName || !date) {
