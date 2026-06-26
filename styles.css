@@ -151,3 +151,53 @@ th, td {
     background: #3A4A5A;
     border-radius: 6px;
 }
+
+/* ============================
+   PARENT PURCHASE SYSTEM
+============================ */
+
+/* Highlight parent name in lot section */
+#lot-section h3 span {
+    color: #FF6A00;
+    font-weight: bold;
+}
+
+/* Hover rows for parent + lot tables */
+#parent-purchase-table-body tr:hover,
+#lot-table-body tr:hover {
+    background: #F0F0F0;
+}
+
+/* Buttons inside tables */
+table button {
+    padding: 6px 10px;
+    font-size: 12px;
+    border-radius: 4px;
+}
+
+/* Delete buttons */
+table .delete-btn {
+    background: #D9534F;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+/* "Open" buttons */
+table button:not(.delete-btn) {
+    background: #3A4A5A;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+/* Lot section spacing */
+#lot-section {
+    margin-top: 20px;
+}
+
+/* Highlight active parent row */
+.parent-active {
+    background: #FFF3E0 !important;
+    border-left: 4px solid #FF6A00;
+}
