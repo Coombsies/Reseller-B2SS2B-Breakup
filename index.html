@@ -91,51 +91,52 @@
 
         <!-- SALARY SECTION -->
         <section id="salary" class="panel">
-            <h2>Salary</h2>
+    <h2>Salary</h2>
 
-            <div class="card">
-                <h3>Monthly Goal</h3>
-                <input type="number" id="salary-goal-input" placeholder="Enter Monthly Goal">
-                <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
-            </div>
+    <div class="card">
+        <h3>Monthly Goal</h3>
+        <input type="number" id="salary-goal-input" placeholder="Enter Monthly Goal">
+        <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
+    </div>
 
-            <div class="card">
-                <h3>Salary Tracker</h3>
+    <div class="card">
+        <h3>Salary Tracker</h3>
 
-                <div class="progress-bar">
-                    <div class="progress-fill"></div>
-                </div>
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
+        </div>
 
-                <p><strong>Paid:</strong> $0</p>
-                <p><strong>Remaining:</strong> $0</p>
+        <p><strong>Paid:</strong> $0</p>
+        <p><strong>Remaining:</strong> $0</p>
 
-                <button class="action-btn" onclick="payFullSalary()">Pay Full Goal</button>
-            </div>
+        <button class="action-btn" onclick="payFullSalary()">Pay Full Goal</button>
+    </div>
 
-            <div class="card">
-                <h3>Manual Salary Entry</h3>
-                <div class="form-grid">
-                    <input type="number" id="salary-amount" placeholder="Amount">
-                    <input type="date" id="salary-date">
-                </div>
-                <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
-            </div>
+    <div class="card">
+        <h3>Manual Salary Entry</h3>
+        <div class="form-grid">
+            <input type="number" id="salary-amount" placeholder="Amount">
+            <input type="date" id="salary-date">
+        </div>
+        <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
+    </div>
 
-            <div class="card">
-                <h3>Salary Payment History</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Paid On</th>
-                            <th>Amount Paid</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="salary-table-body"></tbody>
-                </table>
-            </div>
-        </section>
+    <div class="card">
+        <h3>Salary Payment History</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Paid On</th>
+                    <th>Amount Paid</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody id="salary-table-body"></tbody>
+        </table>
+    </div>
+</section>
 
+        
         <!-- PURCHASES SECTION -->
         <section id="purchases" class="panel">
             <h2>Purchases</h2>
