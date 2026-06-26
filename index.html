@@ -2,308 +2,377 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Reseller B2SS2B Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reseller B2SS2B Breakup</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
 
-    <!-- ============================
-         NAVIGATION
-    ============================= -->
-    <nav>
-        <button class="nav-btn active" data-section="sales">Sales</button>
-        <button class="nav-btn" data-section="purchases">Simple Purchases</button>
-        <button class="nav-btn" data-section="parent-purchases">Parent Purchases</button>
-        <button class="nav-btn" data-section="recurring">Recurring</button>
-        <button class="nav-btn" data-section="salary">Salary</button>
-        <button class="nav-btn" data-section="archive">Archive</button>
+    <!-- Top Navigation -->
+    <nav class="top-nav">
+        <div class="logo">B2SS2B Breakup</div>
+        <div class="nav-links">
+            <button class="nav-btn active" data-section="sales">Sales</button>
+            <button class="nav-btn" data-section="salary">Salary</button>
+            <button class="nav-btn" data-section="purchases">Purchases</button>
+            <button class="nav-btn" data-section="summary">Summary</button>
+        </div>
     </nav>
 
-    <!-- ============================
-         SALES PANEL
-    ============================= -->
-    <div id="sales" class="panel active">
+    <!-- MAIN CONTENT -->
+    <main>
 
-        <h2>Manual Sale Entry</h2>
+        <!-- SALES SECTION -->
+        <section id="sales" class="panel active">
+            <h2>Sales</h2>
 
-        <div class="form-grid">
-            <label>Item</label>
-            <input id="manual-item" type="text">
+            <div class="card">
+                <h3>Manual Sale Entry</h3>
+                <div class="form-grid">
 
-            <label>Qty</label>
-            <input id="manual-qty" type="number">
+                    <label>Item Name
+                        <input type="text" id="manual-item">
+                    </label>
 
-            <label>Total Sale Price</label>
-            <input id="manual-total" type="number" step="0.01">
+                    <label>Quantity
+                        <input type="number" id="manual-qty">
+                    </label>
 
-            <label>Selling Cost</label>
-            <input id="manual-cost" type="number" step="0.01">
+                    <label>Total Sale Price
+                        <input type="number" id="manual-total">
+                    </label>
 
-            <label>COGS</label>
-            <input id="manual-cogs" type="number" step="0.01">
+                    <label>Selling Cost
+                        <input type="number" id="manual-cost">
+                    </label>
 
-            <label>Date</label>
-            <input id="manual-date" type="date">
+                    <label>COGS
+                        <input type="number" id="manual-cogs">
+                    </label>
 
-            <label>Notes</label>
-            <input id="manual-notes" type="text">
-        </div>
+                    <label>Date
+                        <input type="date" id="manual-date">
+                    </label>
 
-        <button class="action-btn" onclick="addSale()">Add Sale</button>
+                    <label>Notes
+                        <input type="text" id="manual-notes">
+                    </label>
 
-        <h2>Sales</h2>
+                </div>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Qty</th>
-                    <th>Total</th>
-                    <th>Cost</th>
-                    <th>COGS</th>
-                    <th>Link</th>
-                    <th>Profit</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="sales-table-body"></tbody>
-        </table>
-
-    </div>
-
-    <!-- ============================
-         SIMPLE PURCHASES PANEL
-    ============================= -->
-    <div id="purchases" class="panel">
-
-        <h2>Add Simple Purchase</h2>
-
-        <div class="form-grid">
-            <label>Item</label>
-            <input id="purchase-item" type="text">
-
-            <label>Total Amount</label>
-            <input id="purchase-amount" type="number" step="0.01">
-
-            <label>Qty</label>
-            <input id="purchase-qty" type="number">
-
-            <label>Date</label>
-            <input id="purchase-date" type="date">
-
-            <label>Notes</label>
-            <input id="purchase-notes" type="text">
-        </div>
-
-        <button class="action-btn" onclick="addPurchase()">Add Purchase</button>
-
-        <h2>Simple Purchases</h2>
-
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Item</th>
-                    <th>Amount</th>
-                    <th>Qty</th>
-                    <th>Cost/Item</th>
-                    <th>Remaining</th>
-                    <th>Date</th>
-                    <th>Notes</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="purchase-table-body"></tbody>
-        </table>
-
-    </div>
-
-    <!-- ============================
-         PARENT PURCHASES PANEL
-    ============================= -->
-    <div id="parent-purchases" class="panel">
-
-        <h2>Parent Purchase Entry</h2>
-
-        <div class="form-grid">
-
-            <label>Source Name</label>
-            <input id="parent-source-name" type="text">
-
-            <label>Date</label>
-            <input id="parent-date" type="date">
-
-            <label>Buyer Premium %</label>
-            <input id="parent-premium-percent" type="number" step="0.01">
-
-            <label>Buyer Premium $</label>
-            <input id="parent-premium-amount" type="number" step="0.01">
-
-        </div>
-
-        <button class="action-btn" onclick="addParentPurchase()">Add Parent Purchase</button>
-
-        <h2>Parent Purchases</h2>
-
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Source</th>
-                    <th>Date</th>
-                    <th>Total Hammer</th>
-                    <th>Total Premium</th>
-                    <th>Total Cost</th>
-                    <th>Total Qty</th>
-                    <th>Lots</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="parent-purchase-table-body"></tbody>
-        </table>
-
-        <hr>
-
-        <div id="lot-section" style="display:none;">
-
-            <h2>Lots for: <span id="lot-parent-name"></span></h2>
-
-            <div class="form-grid">
-
-                <label>Lot Number</label>
-                <input id="lot-number" type="text">
-
-                <label>Hammer Price</label>
-                <input id="lot-hammer" type="number" step="0.01">
-
-                <label>Qty</label>
-                <input id="lot-qty" type="number">
-
+                <button class="action-btn" onclick="addSale()">Add Sale</button>
             </div>
 
-            <button class="action-btn" onclick="addLot()">Add Lot</button>
+            <div class="card">
+                <h3>CSV Upload</h3>
+                <div class="upload-zone">Drag & Drop CSV Here</div>
+                <input type="file" accept=".csv" onchange="importCSV(this.files[0])">
+            </div>
 
-            <h3>Lots</h3>
+            <div class="card">
+                <h3>Sales Table</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Total Sale Price</th>
+                            <th>Selling Cost</th>
+                            <th>COGS</th>
+                            <th>Profit</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-table-body"></tbody>
+                </table>
+            </div>
+        </section>
 
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Lot #</th>
-                        <th>Hammer</th>
-                        <th>Qty</th>
-                        <th>Premium Share</th>
-                        <th>Total Cost</th>
-                        <th>Cost/Item</th>
-                        <th>Remaining</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody id="lot-table-body"></tbody>
-            </table>
+        <!-- SALARY SECTION -->
+        <section id="salary" class="panel">
+            <h2>Salary</h2>
 
-        </div>
+            <div class="card">
+                <h3>Monthly Goal</h3>
+                <input type="number" id="salary-goal-input" placeholder="Enter Monthly Goal">
+                <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
+            </div>
 
-    </div>
+            <div class="card">
+                <h3>Salary Tracker</h3>
 
-    <!-- ============================
-         RECURRING PANEL
-    ============================= -->
-    <div id="recurring" class="panel">
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
 
-        <h2>Add Recurring Expense</h2>
+                <p><strong>Paid:</strong> $0</p>
+                <p><strong>Remaining:</strong> $0</p>
 
-        <div class="form-grid">
-            <label>Name</label>
-            <input id="rec-name" type="text">
+                <button class="action-btn" onclick="payFullSalary()">Pay Full Goal</button>
+            </div>
 
-            <label>Amount</label>
-            <input id="rec-amount" type="number" step="0.01">
+            <div class="card">
+                <h3>Manual Salary Entry</h3>
+                <div class="form-grid">
+                    <input type="number" id="salary-amount" placeholder="Amount">
+                    <input type="date" id="salary-date">
+                </div>
+                <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
+            </div>
 
-            <label>Due Day</label>
-            <input id="rec-due" type="number">
+            <div class="card">
+                <h3>Salary Payment History</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Paid On</th>
+                            <th>Amount Paid</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="salary-table-body"></tbody>
+                </table>
+            </div>
+        </section>
 
-            <label>Notes</label>
-            <input id="rec-notes" type="text">
-        </div>
+        <!-- PURCHASES SECTION -->
+        <section id="purchases" class="panel">
+            <h2>Purchases</h2>
 
-        <button class="action-btn" onclick="addRecurring()">Add Recurring</button>
+            <!-- ============================
+                 NEW: PARENT PURCHASE SYSTEM
+            ============================= -->
+            <div class="card">
+                <h3>Parent Purchases (Auctions, FB Marketplace, etc.)</h3>
 
-        <h2>Recurring Expenses</h2>
+                <div class="form-grid">
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Amount</th>
-                    <th>Due</th>
-                    <th>Notes</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="recurring-table-body"></tbody>
-        </table>
+                    <label>Source Name
+                        <input type="text" id="pp-source" placeholder="Westons Auction, FB Marketplace, etc.">
+                    </label>
 
-    </div>
+                    <label>Date
+                        <input type="date" id="pp-date">
+                    </label>
 
-    <!-- ============================
-         SALARY PANEL
-    ============================= -->
-    <div id="salary" class="panel">
-        <h2>Salary Goal</h2>
+                    <label>Buyer Premium %
+                        <input type="number" id="pp-premium-percent" placeholder="15">
+                    </label>
 
-        <label>Monthly Goal</label>
-        <input id="salary-goal" type="number" step="0.01">
+                    <label>Buyer Premium $
+                        <input type="number" id="pp-premium-amount" placeholder="45.00">
+                    </label>
 
-        <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
+                </div>
 
-        <h2>Salary Entries</h2>
+                <button class="action-btn" onclick="addParentPurchase()">Add Parent Purchase</button>
+            </div>
 
-        <div class="form-grid">
-            <label>Amount</label>
-            <input id="salary-amount" type="number" step="0.01">
+            <div class="card">
+                <h3>Parent Purchase List</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th>Date</th>
+                            <th>Total Hammer</th>
+                            <th>Premium</th>
+                            <th>Total Cost</th>
+                            <th>Total Qty</th>
+                            <th>Lots</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="parent-purchase-table-body"></tbody>
+                </table>
+            </div>
 
-            <label>Date</label>
-            <input id="salary-date" type="date">
+            <div class="card" id="lot-section" style="display:none;">
+                <h3>Lots for: <span id="lot-parent-name"></span></h3>
 
-            <label>Notes</label>
-            <input id="salary-notes" type="text">
-        </div>
+                <div class="form-grid">
 
-        <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
+                    <label>Lot Number
+                        <input type="text" id="lot-number" placeholder="100">
+                    </label>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Amount</th>
-                    <th>Date</th>
-                    <th>Notes</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="salary-table-body"></tbody>
-        </table>
+                    <label>Hammer Price
+                        <input type="number" id="lot-hammer" placeholder="50">
+                    </label>
 
-    </div>
+                    <label>Quantity
+                        <input type="number" id="lot-qty" placeholder="12">
+                    </label>
 
-    <!-- ============================
-         ARCHIVE PANEL
-    ============================= -->
-    <div id="archive" class="panel">
-        <h2>Archive Months</h2>
+                </div>
 
-        <button class="action-btn" onclick="archiveCurrentMonth()">Archive Current Month</button>
+                <button class="action-btn" onclick="addLot()">Add Lot</button>
 
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Month</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="archive-table-body"></tbody>
-        </table>
-    </div>
+                <table style="margin-top:20px;">
+                    <thead>
+                        <tr>
+                            <th>Lot</th>
+                            <th>Hammer</th>
+                            <th>Qty</th>
+                            <th>Premium Share</th>
+                            <th>Total Cost</th>
+                            <th>Cost/Item</th>
+                            <th>Remaining</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="lot-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- END OF PART 1 -->
+            <!-- SIMPLE PURCHASES (your original system) -->
+            <div class="card">
+                <h3>Add Purchase</h3>
+                <div class="form-grid">
+
+                    <label>Item / Category
+                        <input type="text" id="purchase-item" placeholder="Item / Category">
+                    </label>
+
+                    <label>Total Amount
+                        <input type="number" id="purchase-amount" placeholder="Amount">
+                    </label>
+
+                    <label>Quantity
+                        <input type="number" id="purchase-qty" placeholder="Qty">
+                    </label>
+
+                    <label>Date
+                        <input type="date" id="purchase-date">
+                    </label>
+
+                    <label>Notes
+                        <input type="text" id="purchase-notes" placeholder="Notes">
+                    </label>
+
+                </div>
+                <button class="action-btn" onclick="addPurchase()">Add Purchase</button>
+            </div>
+
+            <!-- RECURRING EXPENSES -->
+            <div class="card">
+                <h3>Monthly Recurring Expenses</h3>
+                <div class="form-grid">
+
+                    <label>Name
+                        <input type="text" id="rec-name" placeholder="Expense Name">
+                    </label>
+
+                    <label>Amount
+                        <input type="number" id="rec-amount" placeholder="Amount">
+                    </label>
+
+                    <label>Due Day (1–31)
+                        <input type="number" id="rec-due" min="1" max="31" placeholder="Day">
+                    </label>
+
+                    <label>Notes
+                        <input type="text" id="rec-notes" placeholder="Notes">
+                    </label>
+
+                </div>
+                <button class="action-btn" onclick="addRecurring()">Add Recurring Expense</button>
+            </div>
+
+            <div class="card">
+                <h3>Recurring Expenses</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Amount</th>
+                            <th>Due Day</th>
+                            <th>Notes</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="recurring-table-body"></tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h3>Purchase History</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Total Cost</th>
+                            <th>Qty</th>
+                            <th>Cost / Item</th>
+                            <th>Date</th>
+                            <th>Notes</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="purchase-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- SUMMARY SECTION -->
+        <section id="summary" class="panel">
+            <h2>Monthly Summary</h2>
+
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <h3>Total Sales</h3>
+                    <p id="sumTotalSales">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total COGS</h3>
+                    <p id="sumTotalCOGS">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Sales Profit</h3>
+                    <p id="sumSalesProfit">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Total Purchases</h3>
+                    <p id="sumTotalPurchases">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Recurring Bills</h3>
+                    <p id="sumTotalRecurring">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>Salary Paid</h3>
+                    <p id="sumSalaryPaid">$0.00</p>
+                </div>
+            </div>
+
+            <div class="summary-card" style="margin-top:20px;">
+                <h3>Final Net Profit</h3>
+                <p id="sumNetProfit">$0.00</p>
+            </div>
+
+            <div class="summary-grid" style="margin-top:20px;">
+                <div class="summary-card">
+                    <h3>75% Sourcing</h3>
+                    <p id="sum75">$0.00</p>
+                </div>
+                <div class="summary-card">
+                    <h3>25% Savings</h3>
+                    <p id="sum25">$0.00</p>
+                </div>
+            </div>
+
+            <button class="danger-btn" onclick="finalizeMonth()">Finalize Month</button>
+
+            <div class="card">
+                <h3>Month Archive</h3>
+                <div id="archive-list"></div>
+            </div>
+        </section>
+
+    </main>
 
     <script src="app.js"></script>
-
 </body>
 </html>
