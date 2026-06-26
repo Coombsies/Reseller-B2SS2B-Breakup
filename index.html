@@ -140,6 +140,94 @@
         <section id="purchases" class="panel">
             <h2>Purchases</h2>
 
+            <!-- ============================
+                 NEW: PARENT PURCHASE SYSTEM
+            ============================= -->
+            <div class="card">
+                <h3>Parent Purchases (Auctions, FB Marketplace, etc.)</h3>
+
+                <div class="form-grid">
+
+                    <label>Source Name
+                        <input type="text" id="pp-source" placeholder="Westons Auction, FB Marketplace, etc.">
+                    </label>
+
+                    <label>Date
+                        <input type="date" id="pp-date">
+                    </label>
+
+                    <label>Buyer Premium %
+                        <input type="number" id="pp-premium-percent" placeholder="15">
+                    </label>
+
+                    <label>Buyer Premium $
+                        <input type="number" id="pp-premium-amount" placeholder="45.00">
+                    </label>
+
+                </div>
+
+                <button class="action-btn" onclick="addParentPurchase()">Add Parent Purchase</button>
+            </div>
+
+            <div class="card">
+                <h3>Parent Purchase List</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Source</th>
+                            <th>Date</th>
+                            <th>Total Hammer</th>
+                            <th>Premium</th>
+                            <th>Total Cost</th>
+                            <th>Total Qty</th>
+                            <th>Lots</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="parent-purchase-table-body"></tbody>
+                </table>
+            </div>
+
+            <div class="card" id="lot-section" style="display:none;">
+                <h3>Lots for: <span id="lot-parent-name"></span></h3>
+
+                <div class="form-grid">
+
+                    <label>Lot Number
+                        <input type="text" id="lot-number" placeholder="100">
+                    </label>
+
+                    <label>Hammer Price
+                        <input type="number" id="lot-hammer" placeholder="50">
+                    </label>
+
+                    <label>Quantity
+                        <input type="number" id="lot-qty" placeholder="12">
+                    </label>
+
+                </div>
+
+                <button class="action-btn" onclick="addLot()">Add Lot</button>
+
+                <table style="margin-top:20px;">
+                    <thead>
+                        <tr>
+                            <th>Lot</th>
+                            <th>Hammer</th>
+                            <th>Qty</th>
+                            <th>Premium Share</th>
+                            <th>Total Cost</th>
+                            <th>Cost/Item</th>
+                            <th>Remaining</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="lot-table-body"></tbody>
+                </table>
+            </div>
+
+            <!-- END OF PART 1 -->
+            <!-- SIMPLE PURCHASES (your original system) -->
             <div class="card">
                 <h3>Add Purchase</h3>
                 <div class="form-grid">
