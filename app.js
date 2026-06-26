@@ -171,6 +171,7 @@ function addSale() {
     document.getElementById("manual-date").value = "";
     document.getElementById("manual-notes").value = "";
 }
+
 /* -----------------------------
    SALES — INLINE COGS UPDATE
 ----------------------------- */
@@ -441,6 +442,7 @@ function renderSalesTable() {
         tbody.appendChild(row);
     });
 }
+
 /* -----------------------------
    HANDLE DROPDOWN CHANGE
 ----------------------------- */
@@ -805,3 +807,146 @@ function deleteParentPurchase(index) {
 
     document.getElementById("lot-section").style.display = "none";
 }
+
+/* -----------------------------
+   RENDER PARENT PURCHASE TABLE
+----------------------------- */
+function renderParentPurchaseTable() {
+    const tbody = document.getElementById("parent-purchase-table-body");
+    tbody.innerHTML = "";
+
+    parentPurchases.forEach((p, index) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${p.sourceName}</td>
+            <td>${p.date}</td>
+            <td>$${p.totalHammer.toFixed(2)}</td>
+            <td>$${p.totalPremium.toFixed(2)}</td>
+            <td>$${p.totalCost.toFixed(2)}</td>
+            <td>${p.totalQty}</td>
+            <td>
+                <button class="action-btn" onclick="selectParentPurchase(${index})">
+                    View Lots
+                </button>
+            </td>
+            <td>
+                <button class="delete-btn" onclick="deleteParentPurchase(${index})">✖</button>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+/* -----------------------------
+   SUMMARY CALCULATIONS
+----------------------------- */
+function updateSummary() {
+    const totalSales = sales.reduce((s, x) => s + x.total, 0);
+    const totalCogs = sales.reduce((s, x) => s + x.cogs, 0);
+    const salesProfit = totalSales - totalCogs;
+
+    const totalPurchases = purchases.reduce((s, p) => s + p.amount, 0)
+        + parentPurchases.reduce((s, p) => s + p.totalCost, 0);
+
+    const totalRecurring = recurringExpenses.reduce((s, r) => s + r.amount, 0);
+    const salaryPaid = salaryEntries.reduce((s, e) => s + e.amount, 0);
+
+    const netProfit = salesProfit - totalPurchases - totalRecurring - salaryPaid;
+
+    document.getElementById("sumTotalSales").textContent = `$${totalSales.toFixed(2)}`;
+    document.getElementById("sumTotalCOGS").textContent = `$${totalCogs.toFixed(2)}`;
+    document.getElementById("sumSalesProfit").textContent = `$${salesProfit.toFixed(2)}`;
+    document.getElementById("sumTotalPurchases").textContent = `$${totalPurchases.toFixed(2)}`;
+    document.getElementById("sumTotalRecurring").textContent = `$${totalRecurring.toFixed(2)}`;
+    document.getElementById("sumSalaryPaid").textContent = `$${salaryPaid.toFixed(2)}`;
+    document.getElementById("sumNetProfit").textContent = `$${netProfit.toFixed(2)}`;
+
+    document.getElementById("sum75").textContent = `$${(netProfit * 0.75).toFixed(2)}`;
+    document.getElementById("sum25").textContent = `$${(netProfit * 0.25).toFixed(2)}`;
+}
+
+/* -----------------------------
+   FINALIZE MONTH
+----------------------------- */
+function finalizeMonth() {
+    const monthName = prompt("Enter a name for this month (e.g., June 2026):");
+    if (!monthName) return;
+
+    const archive = {
+        name: monthName,
+        sales,
+        purchases,
+        parentPurchases,
+        recurringExpenses,
+        salaryEntries,
+        summary: {
+            totalSales: sales.reduce((s, x) => s + x.total, 0),
+            totalCogs: sales.reduce((s, x) => s + x.cogs, 0),
+            totalPurchases: purchases.reduce((s, p) => s + p.amount, 0)
+                + parentPurchases.reduce((s, p) => s + p.totalCost, 0),
+            totalRecurring: recurringExpenses.reduce((s, r) => s + r.amount, 0),
+            salaryPaid: salaryEntries.reduce((s, e) => s + e.amount, 0)
+        }
+    };
+
+    archiveMonths.push(archive);
+    Storage.save("archiveMonths", archiveMonths);
+
+    sales = [];
+    purchases = [];
+    parentPurchases = [];
+    recurringExpenses = [];
+    salaryEntries = [];
+
+    Storage.save("sales", sales);
+    Storage.save("purchases", purchases);
+    Storage.save("parentPurchases", parentPurchases);
+    Storage.save("recurringExpenses", recurringExpenses);
+    Storage.save("salaryEntries", salaryEntries);
+
+    renderSalesTable();
+    renderPurchaseTable();
+    renderParentPurchaseTable();
+    renderLotTable();
+    renderArchive();
+    updateSummary();
+
+    alert("Month finalized and archived!");
+}
+
+/* -----------------------------
+   RENDER ARCHIVE LIST
+----------------------------- */
+function renderArchive() {
+    const container = document.getElementById("archive-list");
+    container.innerHTML = "";
+
+    archiveMonths.forEach(a => {
+        const div = document.createElement("div");
+        div.className = "archive-entry";
+
+        div.innerHTML = `
+            <strong>${a.name}</strong><br>
+            Total Sales: $${a.summary.totalSales.toFixed(2)}<br>
+            Total COGS: $${a.summary.totalCogs.toFixed(2)}<br>
+            Total Purchases: $${a.summary.totalPurchases.toFixed(2)}<br>
+            Recurring: $${a.summary.totalRecurring.toFixed(2)}<br>
+            Salary Paid: $${a.summary.salaryPaid.toFixed(2)}
+        `;
+
+        container.appendChild(div);
+    });
+}
+
+/* -----------------------------
+   INITIAL RENDER
+----------------------------- */
+normalizeData();
+renderSalesTable();
+renderPurchaseTable();
+renderParentPurchaseTable();
+renderLotTable();
+renderArchive();
+updateSummary();
