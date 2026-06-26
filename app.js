@@ -704,7 +704,6 @@ function renderParentPurchaseTable() {
         tbody.appendChild(row);
     });
 }
-
 function addParentPurchase() {
     const sourceName = document.getElementById("parent-source-name").value.trim();
     const date = document.getElementById("parent-date").value;
