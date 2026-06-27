@@ -557,6 +557,81 @@ function toNumber(str) {
 }
 
 /* -----------------------------
+   SALARY — ADD ENTRY
+----------------------------- */
+function addSalaryEntry() {
+    const amount = Number(document.getElementById("salary-amount").value) || 0;
+    const date = document.getElementById("salary-date").value.trim();
+    const notes = document.getElementById("salary-notes").value.trim();
+
+    if (amount <= 0 || !date) {
+        alert("Enter Amount and Date.");
+        return;
+    }
+
+    salaryEntries.push({
+        id: crypto.randomUUID(),
+        amount,
+        date,
+        notes
+    });
+
+    Storage.save("salaryEntries", salaryEntries);
+    renderSalaryTable();
+    updateSummary();
+
+    document.getElementById("salary-amount").value = "";
+    document.getElementById("salary-date").value = "";
+    document.getElementById("salary-notes").value = "";
+}
+
+/* -----------------------------
+   SALARY — DELETE ENTRY
+----------------------------- */
+function deleteSalaryEntry(index) {
+    salaryEntries.splice(index, 1);
+    Storage.save("salaryEntries", salaryEntries);
+    renderSalaryTable();
+    updateSummary();
+}
+
+/* -----------------------------
+   SALARY — RENDER TABLE
+----------------------------- */
+function renderSalaryTable() {
+    const tbody = document.getElementById("salary-table-body");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    salaryEntries.forEach((e, index) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>$${e.amount.toFixed(2)}</td>
+            <td>${e.date}</td>
+            <td>${e.notes || ""}</td>
+            <td><button class="delete-btn" onclick="deleteSalaryEntry(${index})">✖</button></td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+/* -----------------------------
+   SALARY GOAL
+----------------------------- */
+function updateSalaryGoal() {
+    const goal = Number(document.getElementById("salary-goal").value) || 0;
+    salaryGoal = goal;
+    Storage.save("salaryGoal", salaryGoal);
+}
+
+function loadSalaryGoal() {
+    document.getElementById("salary-goal").value = salaryGoal || 0;
+}
+
+/* -----------------------------
    SIMPLE PURCHASES
 ----------------------------- */
 function addPurchase() {
@@ -945,6 +1020,8 @@ function renderArchive() {
 ----------------------------- */
 normalizeData();
 renderSalesTable();
+renderSalaryTable();
+loadSalaryGoal();
 renderPurchaseTable();
 renderParentPurchaseTable();
 renderLotTable();
