@@ -52,10 +52,6 @@ let recurringExpenses = Storage.load("recurringExpenses");
 let salaryEntries = Storage.load("salaryEntries");
 let salaryGoal = Storage.load("salaryGoal", 0);
 let archiveMonths = Storage.load("archiveMonths");
-
-/* -----------------------------
-   PARENT PURCHASE SYSTEM
------------------------------ */
 let parentPurchases = Storage.load("parentPurchases", []);
 
 /* -----------------------------
@@ -318,7 +314,6 @@ function unlinkPurchaseFromSale(saleIndex) {
     renderLotTable();
     updateSummary();
 }
-
 /* -----------------------------
    SALES — DELETE
 ----------------------------- */
@@ -562,7 +557,6 @@ function toNumber(str) {
 function addSalaryEntry() {
     const amount = Number(document.getElementById("salary-amount").value) || 0;
     const date = document.getElementById("salary-date").value.trim();
-    const notes = document.getElementById("salary-notes").value.trim();
 
     if (amount <= 0 || !date) {
         alert("Enter Amount and Date.");
@@ -573,16 +567,16 @@ function addSalaryEntry() {
         id: crypto.randomUUID(),
         amount,
         date,
-        notes
+        notes: ""
     });
 
     Storage.save("salaryEntries", salaryEntries);
     renderSalaryTable();
     updateSummary();
+    updateSalaryTracker();
 
     document.getElementById("salary-amount").value = "";
     document.getElementById("salary-date").value = "";
-    document.getElementById("salary-notes").value = "";
 }
 
 /* -----------------------------
@@ -593,6 +587,7 @@ function deleteSalaryEntry(index) {
     Storage.save("salaryEntries", salaryEntries);
     renderSalaryTable();
     updateSummary();
+    updateSalaryTracker();
 }
 
 /* -----------------------------
@@ -608,9 +603,8 @@ function renderSalaryTable() {
         const row = document.createElement("tr");
 
         row.innerHTML = `
-            <td>$${e.amount.toFixed(2)}</td>
             <td>${e.date}</td>
-            <td>${e.notes || ""}</td>
+            <td>$${e.amount.toFixed(2)}</td>
             <td><button class="delete-btn" onclick="deleteSalaryEntry(${index})">✖</button></td>
         `;
 
@@ -619,18 +613,71 @@ function renderSalaryTable() {
 }
 
 /* -----------------------------
-   SALARY GOAL
+   SALARY GOAL (HTML MATCHED)
 ----------------------------- */
 function updateSalaryGoal() {
-    const goal = Number(document.getElementById("salary-goal").value) || 0;
+    const goal = Number(document.getElementById("salary-goal-input").value) || 0;
     salaryGoal = goal;
     Storage.save("salaryGoal", salaryGoal);
+    updateSalaryTracker();
 }
 
 function loadSalaryGoal() {
-    document.getElementById("salary-goal").value = salaryGoal || 0;
+    const el = document.getElementById("salary-goal-input");
+    if (el) el.value = salaryGoal || 0;
 }
 
+/* -----------------------------
+   SALARY TRACKER (NEW)
+----------------------------- */
+function updateSalaryTracker() {
+    const paid = salaryEntries.reduce((s, e) => s + e.amount, 0);
+    const remaining = Math.max(0, salaryGoal - paid);
+
+    // Update Paid/Remaining text (HTML has no IDs)
+    const paidText = document.querySelector("#salary .card:nth-of-type(2) p:nth-of-type(1)");
+    const remainingText = document.querySelector("#salary .card:nth-of-type(2) p:nth-of-type(2)");
+
+    if (paidText) paidText.innerHTML = `<strong>Paid:</strong> $${paid.toFixed(2)}`;
+    if (remainingText) remainingText.innerHTML = `<strong>Remaining:</strong> $${remaining.toFixed(2)}`;
+
+    // Update progress bar
+    const bar = document.querySelector(".progress-fill");
+    if (bar) {
+        const pct = salaryGoal > 0 ? Math.min(100, (paid / salaryGoal) * 100) : 0;
+        bar.style.width = pct + "%";
+    }
+}
+
+/* -----------------------------
+   PAY FULL SALARY (NEW)
+----------------------------- */
+function payFullSalary() {
+    if (salaryGoal <= 0) {
+        alert("Set a salary goal first.");
+        return;
+    }
+
+    const paid = salaryEntries.reduce((s, e) => s + e.amount, 0);
+    const remaining = salaryGoal - paid;
+
+    if (remaining <= 0) {
+        alert("Goal already met.");
+        return;
+    }
+
+    salaryEntries.push({
+        id: crypto.randomUUID(),
+        amount: remaining,
+        date: new Date().toISOString().split("T")[0],
+        notes: "Full goal auto-payment"
+    });
+
+    Storage.save("salaryEntries", salaryEntries);
+    renderSalaryTable();
+    updateSummary();
+    updateSalaryTracker();
+}
 /* -----------------------------
    SIMPLE PURCHASES
 ----------------------------- */
@@ -940,6 +987,8 @@ function updateSummary() {
 
     document.getElementById("sum75").textContent = `$${(netProfit * 0.75).toFixed(2)}`;
     document.getElementById("sum25").textContent = `$${(netProfit * 0.25).toFixed(2)}`;
+
+    updateSalaryTracker();
 }
 
 /* -----------------------------
@@ -1022,6 +1071,7 @@ normalizeData();
 renderSalesTable();
 renderSalaryTable();
 loadSalaryGoal();
+updateSalaryTracker();
 renderPurchaseTable();
 renderParentPurchaseTable();
 renderLotTable();
