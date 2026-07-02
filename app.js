@@ -1228,7 +1228,6 @@ function finalizeMonth() {
     startingBalance = savingsAmount;
     Storage.save("startingBalance", startingBalance);
 
-    // ALSO generate CSV at finalize time
     const csvSummary = {
         totalSales,
         totalCogs,
@@ -1246,15 +1245,22 @@ function finalizeMonth() {
     downloadMonthlyCSV(csvSummary);
 
     // IMPORTANT: keep recurringExpenses so Monthly Recurring stays every month
+    // ❌ OLD (bad):
+    // sales = [];
+    // purchases = [];
+    // parentPurchases = [];
+    // salaryEntries = [];
+
+    // ✅ NEW (safe): clear ONLY sales + salary
     sales = [];
-    purchases = [];
-    parentPurchases = [];
     salaryEntries = [];
 
     Storage.save("sales", sales);
-    Storage.save("purchases", purchases);
-    Storage.save("parentPurchases", parentPurchases);
     Storage.save("salaryEntries", salaryEntries);
+
+    // DO NOT clear purchases or parentPurchases:
+    // Storage.save("purchases", purchases);
+    // Storage.save("parentPurchases", parentPurchases);
 
     renderSalesTable();
     renderPurchaseTable();
@@ -1266,6 +1272,7 @@ function finalizeMonth() {
 
     alert("Month finalized and archived!");
 }
+
 
 /* -----------------------------
    RENDER ARCHIVE LIST
