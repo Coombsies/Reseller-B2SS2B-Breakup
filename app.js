@@ -1303,6 +1303,30 @@ function renderArchive() {
     });
 }
 
+function restoreParentPurchasesFromArchive(monthName) {
+    const archive = archiveMonths.find(a => a.name === monthName);
+    if (!archive) {
+        alert("Archive not found.");
+        return;
+    }
+
+    // Restore parent purchases + lots
+    parentPurchases = JSON.parse(JSON.stringify(archive.parentPurchases));
+    Storage.save("parentPurchases", parentPurchases);
+
+    // Restore simple purchases too (optional)
+    purchases = JSON.parse(JSON.stringify(archive.purchases));
+    Storage.save("purchases", purchases);
+
+    renderParentPurchaseTable();
+    renderLotTable();
+    renderPurchaseTable();
+    renderSalesTable();
+    updateSummary();
+
+    alert(`Restored purchases from ${monthName}. You can now link them.`);
+}
+
 /* -----------------------------
    INITIAL RENDER
 ----------------------------- */
