@@ -54,6 +54,11 @@ let salaryGoal = Storage.load("salaryGoal", 0);
 let archiveMonths = Storage.load("archiveMonths");
 let parentPurchases = Storage.load("parentPurchases", []);
 
+// NEW: dynamic split + starting balance
+let splitSourcing = Storage.load("splitSourcing", 75);   // %
+let splitSavings  = Storage.load("splitSavings", 25);    // %
+let startingBalance = Storage.load("startingBalance", 0); // carry-over savings pool
+
 /* -----------------------------
    DATA NORMALIZATION
 ----------------------------- */
@@ -119,6 +124,27 @@ function findLotById(lotId) {
         if (lot) return { parent, lot };
     }
     return null;
+}
+
+/* -----------------------------
+   SPLIT SETTINGS (NEW)
+----------------------------- */
+function updateSplitSettings(newSourcing, newSavings) {
+    const s = Number(newSourcing) || 0;
+    const sv = Number(newSavings) || 0;
+
+    if (s < 0 || sv < 0 || (s + sv) !== 100) {
+        alert("Split must be positive and total 100%.");
+        return;
+    }
+
+    splitSourcing = s;
+    splitSavings = sv;
+
+    Storage.save("splitSourcing", splitSourcing);
+    Storage.save("splitSavings", splitSavings);
+
+    updateSummary();
 }
 
 /* -----------------------------
@@ -314,6 +340,7 @@ function unlinkPurchaseFromSale(saleIndex) {
     renderLotTable();
     updateSummary();
 }
+
 /* -----------------------------
    SALES — DELETE
 ----------------------------- */
@@ -634,14 +661,12 @@ function updateSalaryTracker() {
     const paid = salaryEntries.reduce((s, e) => s + e.amount, 0);
     const remaining = Math.max(0, salaryGoal - paid);
 
-    // Update Paid/Remaining text (HTML has no IDs)
     const paidText = document.querySelector("#salary .card:nth-of-type(2) p:nth-of-type(1)");
     const remainingText = document.querySelector("#salary .card:nth-of-type(2) p:nth-of-type(2)");
 
     if (paidText) paidText.innerHTML = `<strong>Paid:</strong> $${paid.toFixed(2)}`;
     if (remainingText) remainingText.innerHTML = `<strong>Remaining:</strong> $${remaining.toFixed(2)}`;
 
-    // Update progress bar
     const bar = document.querySelector(".progress-fill");
     if (bar) {
         const pct = salaryGoal > 0 ? Math.min(100, (paid / salaryGoal) * 100) : 0;
@@ -678,6 +703,7 @@ function payFullSalary() {
     updateSummary();
     updateSalaryTracker();
 }
+
 /* -----------------------------
    SIMPLE PURCHASES
 ----------------------------- */
@@ -985,8 +1011,16 @@ function updateSummary() {
     document.getElementById("sumSalaryPaid").textContent = `$${salaryPaid.toFixed(2)}`;
     document.getElementById("sumNetProfit").textContent = `$${netProfit.toFixed(2)}`;
 
-    document.getElementById("sum75").textContent = `$${(netProfit * 0.75).toFixed(2)}`;
-    document.getElementById("sum25").textContent = `$${(netProfit * 0.25).toFixed(2)}`;
+    const sourcingAmount = netProfit * (splitSourcing / 100);
+    const savingsAmount  = netProfit * (splitSavings / 100);
+
+    document.getElementById("sum75").textContent = `$${sourcingAmount.toFixed(2)}`;
+    document.getElementById("sum25").textContent = `$${savingsAmount.toFixed(2)}`;
+
+    const sbEl = document.getElementById("sumStartingBalance");
+    if (sbEl) {
+        sbEl.textContent = `$${startingBalance.toFixed(2)}`;
+    }
 
     updateSalaryTracker();
 }
@@ -998,6 +1032,21 @@ function finalizeMonth() {
     const monthName = prompt("Enter a name for this month (e.g., June 2026):");
     if (!monthName) return;
 
+    const totalSales = sales.reduce((s, x) => s + x.total, 0);
+    const totalCogs = sales.reduce((s, x) => s + x.cogs, 0);
+    const salesProfit = totalSales - totalCogs;
+
+    const totalPurchases = purchases.reduce((s, p) => s + p.amount, 0)
+        + parentPurchases.reduce((s, p) => s + p.totalCost, 0);
+
+    const totalRecurring = recurringExpenses.reduce((s, r) => s + r.amount, 0);
+    const salaryPaid = salaryEntries.reduce((s, e) => s + e.amount, 0);
+
+    const netProfit = salesProfit - totalPurchases - totalRecurring - salaryPaid;
+
+    const sourcingAmount = netProfit * (splitSourcing / 100);
+    const savingsAmount  = netProfit * (splitSavings / 100);
+
     const archive = {
         name: monthName,
         sales,
@@ -1006,17 +1055,24 @@ function finalizeMonth() {
         recurringExpenses,
         salaryEntries,
         summary: {
-            totalSales: sales.reduce((s, x) => s + x.total, 0),
-            totalCogs: sales.reduce((s, x) => s + x.cogs, 0),
-            totalPurchases: purchases.reduce((s, p) => s + p.amount, 0)
-                + parentPurchases.reduce((s, p) => s + p.totalCost, 0),
-            totalRecurring: recurringExpenses.reduce((s, r) => s + r.amount, 0),
-            salaryPaid: salaryEntries.reduce((s, e) => s + e.amount, 0)
+            totalSales,
+            totalCogs,
+            totalPurchases,
+            totalRecurring,
+            salaryPaid,
+            netProfit,
+            sourcingSplit: sourcingAmount,
+            savingsSplit: savingsAmount,
+            splitSourcingPercent: splitSourcing,
+            splitSavingsPercent: splitSavings
         }
     };
 
     archiveMonths.push(archive);
     Storage.save("archiveMonths", archiveMonths);
+
+    startingBalance = savingsAmount;
+    Storage.save("startingBalance", startingBalance);
 
     sales = [];
     purchases = [];
@@ -1051,13 +1107,18 @@ function renderArchive() {
         const div = document.createElement("div");
         div.className = "archive-entry";
 
+        const s = a.summary || {};
+
         div.innerHTML = `
             <strong>${a.name}</strong><br>
-            Total Sales: $${a.summary.totalSales.toFixed(2)}<br>
-            Total COGS: $${a.summary.totalCogs.toFixed(2)}<br>
-            Total Purchases: $${a.summary.totalPurchases.toFixed(2)}<br>
-            Recurring: $${a.summary.totalRecurring.toFixed(2)}<br>
-            Salary Paid: $${a.summary.salaryPaid.toFixed(2)}
+            Total Sales: $${(s.totalSales || 0).toFixed(2)}<br>
+            Total COGS: $${(s.totalCogs || 0).toFixed(2)}<br>
+            Total Purchases: $${(s.totalPurchases || 0).toFixed(2)}<br>
+            Recurring: $${(s.totalRecurring || 0).toFixed(2)}<br>
+            Salary Paid: $${(s.salaryPaid || 0).toFixed(2)}<br>
+            Net Profit: $${(s.netProfit || 0).toFixed(2)}<br>
+            Sourcing (${s.splitSourcingPercent || splitSourcing}%): $${(s.sourcingSplit || 0).toFixed(2)}<br>
+            Savings (${s.splitSavingsPercent || splitSavings}%): $${(s.savingsSplit || 0).toFixed(2)}
         `;
 
         container.appendChild(div);
