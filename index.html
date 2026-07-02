@@ -89,54 +89,53 @@
             </div>
         </section>
 
-       <!-- SALARY SECTION -->
+        <!-- SALARY SECTION -->
         <section id="salary" class="panel">
-    <h2>Salary</h2>
+            <h2>Salary</h2>
 
-    <div class="card">
-        <h3>Monthly Goal</h3>
-        <input type="number" id="salary-goal-input" placeholder="Enter Monthly Goal">
-        <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
-    </div>
+            <div class="card">
+                <h3>Monthly Goal</h3>
+                <input type="number" id="salary-goal-input" placeholder="Enter Monthly Goal">
+                <button class="action-btn" onclick="updateSalaryGoal()">Update Goal</button>
+            </div>
 
-    <div class="card">
-        <h3>Salary Tracker</h3>
+            <div class="card">
+                <h3>Salary Tracker</h3>
 
-        <div class="progress-bar">
-            <div class="progress-fill"></div>
-        </div>
+                <div class="progress-bar">
+                    <div class="progress-fill"></div>
+                </div>
 
-        <p><strong>Paid:</strong> $0</p>
-        <p><strong>Remaining:</strong> $0</p>
+                <p><strong>Paid:</strong> $0</p>
+                <p><strong>Remaining:</strong> $0</p>
 
-        <button class="action-btn" onclick="payFullSalary()">Pay Full Goal</button>
-    </div>
+                <button class="action-btn" onclick="payFullSalary()">Pay Full Goal</button>
+            </div>
 
-    <div class="card">
-        <h3>Manual Salary Entry</h3>
-        <div class="form-grid">
-            <input type="number" id="salary-amount" placeholder="Amount">
-            <input type="date" id="salary-date">
-        </div>
-        <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
-    </div>
+            <div class="card">
+                <h3>Manual Salary Entry</h3>
+                <div class="form-grid">
+                    <input type="number" id="salary-amount" placeholder="Amount">
+                    <input type="date" id="salary-date">
+                </div>
+                <button class="action-btn" onclick="addSalaryEntry()">Add Entry</button>
+            </div>
 
-    <div class="card">
-        <h3>Salary Payment History</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Paid On</th>
-                    <th>Amount Paid</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody id="salary-table-body"></tbody>
-        </table>
-    </div>
-</section>
+            <div class="card">
+                <h3>Salary Payment History</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Paid On</th>
+                            <th>Amount Paid</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="salary-table-body"></tbody>
+                </table>
+            </div>
+        </section>
 
-        
         <!-- PURCHASES SECTION -->
         <section id="purchases" class="panel">
             <h2>Purchases</h2>
@@ -328,7 +327,7 @@
                     <p id="sumTotalCOGS">$0.00</p>
                 </div>
                 <div class="summary-card">
-                    <h3>Sales Profit</h3>
+                    <h3Sales Profit</h3>
                     <p id="sumSalesProfit">$0.00</p>
                 </div>
                 <div class="summary-card">
@@ -348,6 +347,24 @@
             <div class="summary-card" style="margin-top:20px;">
                 <h3>Final Net Profit</h3>
                 <p id="sumNetProfit">$0.00</p>
+            </div>
+
+            <div class="summary-card" style="margin-top:20px;">
+                <h3>Starting Balance (Savings Carry-Over)</h3>
+                <p id="sumStartingBalance">$0.00</p>
+            </div>
+
+            <div class="summary-card" style="margin-top:20px;">
+                <h3>Split Settings</h3>
+                <label>Sourcing %:
+                    <input type="number" id="split-sourcing-input" value="75"
+                           onblur="updateSplitSettings(this.value, document.getElementById('split-savings-input').value)">
+                </label>
+                <label>Savings %:
+                    <input type="number" id="split-savings-input" value="25"
+                           onblur="updateSplitSettings(document.getElementById('split-sourcing-input').value, this.value)">
+                </label>
+                <p style="font-size:0.85em;">Must total 100%.</p>
             </div>
 
             <div class="summary-grid" style="margin-top:20px;">
@@ -371,6 +388,6 @@
 
     </main>
 
-   <script src="app.js?v=3"></script>
+    <script src="app.js?v=3"></script>
 </body>
 </html>
