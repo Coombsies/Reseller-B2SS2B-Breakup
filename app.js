@@ -773,6 +773,72 @@ function deletePurchase(index) {
 }
 
 /* -----------------------------
+   RECURRING EXPENSES — ADD
+----------------------------- */
+function addRecurring() {
+    const name = document.getElementById("rec-name").value.trim();
+    const amount = Number(document.getElementById("rec-amount").value) || 0;
+    const due = Number(document.getElementById("rec-due").value) || 0;
+    const notes = document.getElementById("rec-notes").value.trim();
+
+    if (!name || amount <= 0 || due <= 0) {
+        alert("Enter Name, Amount, and Due Day.");
+        return;
+    }
+
+    recurringExpenses.push({
+        id: crypto.randomUUID(),
+        name,
+        amount,
+        due,
+        notes
+    });
+
+    Storage.save("recurringExpenses", recurringExpenses);
+    renderRecurringTable();
+    updateSummary();
+
+    document.getElementById("rec-name").value = "";
+    document.getElementById("rec-amount").value = "";
+    document.getElementById("rec-due").value = "";
+    document.getElementById("rec-notes").value = "";
+}
+
+/* -----------------------------
+   RECURRING EXPENSES — RENDER
+----------------------------- */
+function renderRecurringTable() {
+    const tbody = document.getElementById("recurring-table-body");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    recurringExpenses.forEach((r, index) => {
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+            <td>${r.name}</td>
+            <td>$${r.amount.toFixed(2)}</td>
+            <td>${r.due}</td>
+            <td>${r.notes || ""}</td>
+            <td><button class="delete-btn" onclick="deleteRecurring(${index})">✖</button></td>
+        `;
+
+        tbody.appendChild(row);
+    });
+}
+
+/* -----------------------------
+   RECURRING EXPENSES — DELETE
+----------------------------- */
+function deleteRecurring(index) {
+    recurringExpenses.splice(index, 1);
+    Storage.save("recurringExpenses", recurringExpenses);
+    renderRecurringTable();
+    updateSummary();
+}
+
+/* -----------------------------
    PARENT PURCHASE — FIXED
 ----------------------------- */
 function addParentPurchase() {
@@ -1195,6 +1261,7 @@ function finalizeMonth() {
     renderParentPurchaseTable();
     renderLotTable();
     renderArchive();
+    renderRecurringTable();
     updateSummary();
 
     alert("Month finalized and archived!");
@@ -1241,4 +1308,5 @@ renderPurchaseTable();
 renderParentPurchaseTable();
 renderLotTable();
 renderArchive();
+renderRecurringTable();
 updateSummary();
