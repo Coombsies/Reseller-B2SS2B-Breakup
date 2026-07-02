@@ -1026,6 +1026,94 @@ function updateSummary() {
 }
 
 /* -----------------------------
+   DOWNLOAD MONTHLY CSV (B2SS2B)
+   (TOTALS ONLY, FOR BUTTON + FINALIZE)
+----------------------------- */
+function downloadMonthlyCSV(summary) {
+    const headers = [
+        "Total Sales",
+        "Total COGS",
+        "Total Profit",
+        "Total Purchases",
+        "Total Recurring",
+        "Salary Paid",
+        "Net Profit",
+        "Sourcing Split Amount",
+        "Savings Split Amount",
+        "Sourcing Split Percent",
+        "Savings Split Percent",
+        "Finalized Timestamp"
+    ];
+
+    const values = [
+        summary.totalSales.toFixed(2),
+        summary.totalCogs.toFixed(2),
+        summary.totalProfit.toFixed(2),
+        summary.totalPurchases.toFixed(2),
+        summary.totalRecurring.toFixed(2),
+        summary.salaryPaid.toFixed(2),
+        summary.netProfit.toFixed(2),
+        summary.sourcingAmount.toFixed(2),
+        summary.savingsAmount.toFixed(2),
+        summary.splitSourcingPercent.toFixed(2),
+        summary.splitSavingsPercent.toFixed(2),
+        summary.timestamp
+    ];
+
+    const csvContent = headers.join(",") + "\n" + values.join(",");
+
+    const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const filename = `B2SS2B_${month}.csv`;
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
+/* -----------------------------
+   TRIGGER CSV DOWNLOAD (BUTTON)
+----------------------------- */
+function triggerCSVDownload() {
+    const totalSales = sales.reduce((s, x) => s + x.total, 0);
+    const totalCogs = sales.reduce((s, x) => s + x.cogs, 0);
+    const salesProfit = totalSales - totalCogs;
+
+    const totalPurchases = purchases.reduce((s, p) => s + p.amount, 0)
+        + parentPurchases.reduce((s, p) => s + p.totalCost, 0);
+
+    const totalRecurring = recurringExpenses.reduce((s, r) => s + r.amount, 0);
+    const salaryPaid = salaryEntries.reduce((s, e) => s + e.amount, 0);
+
+    const netProfit = salesProfit - totalPurchases - totalRecurring - salaryPaid;
+
+    const sourcingAmount = netProfit * (splitSourcing / 100);
+    const savingsAmount  = netProfit * (splitSavings / 100);
+
+    const summary = {
+        totalSales,
+        totalCogs,
+        totalProfit: salesProfit,
+        totalPurchases,
+        totalRecurring,
+        salaryPaid,
+        netProfit,
+        sourcingAmount,
+        savingsAmount,
+        splitSourcingPercent: splitSourcing,
+        splitSavingsPercent: splitSavings,
+        timestamp: new Date().toISOString()
+    };
+
+    downloadMonthlyCSV(summary);
+}
+
+/* -----------------------------
    FINALIZE MONTH
 ----------------------------- */
 function finalizeMonth() {
@@ -1074,16 +1162,32 @@ function finalizeMonth() {
     startingBalance = savingsAmount;
     Storage.save("startingBalance", startingBalance);
 
+    // ALSO generate CSV at finalize time
+    const csvSummary = {
+        totalSales,
+        totalCogs,
+        totalProfit: salesProfit,
+        totalPurchases,
+        totalRecurring,
+        salaryPaid,
+        netProfit,
+        sourcingAmount,
+        savingsAmount,
+        splitSourcingPercent: splitSourcing,
+        splitSavingsPercent: splitSavings,
+        timestamp: new Date().toISOString()
+    };
+    downloadMonthlyCSV(csvSummary);
+
+    // IMPORTANT: keep recurringExpenses so Monthly Recurring stays every month
     sales = [];
     purchases = [];
     parentPurchases = [];
-    recurringExpenses = [];
     salaryEntries = [];
 
     Storage.save("sales", sales);
     Storage.save("purchases", purchases);
     Storage.save("parentPurchases", parentPurchases);
-    Storage.save("recurringExpenses", recurringExpenses);
     Storage.save("salaryEntries", salaryEntries);
 
     renderSalesTable();
