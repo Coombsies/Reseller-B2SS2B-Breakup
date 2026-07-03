@@ -100,6 +100,11 @@ function normalizeData() {
                 l.costPerItem = l.qty > 0 ? l.totalCost / l.qty : 0;
             }
             if (typeof l.remainingQty !== "number") l.remainingQty = l.qty;
+
+            // ⭐ ADDED — initialize lot profit tracking
+            if (typeof l.totalProfit !== "number") l.totalProfit = -l.totalCost;
+            if (typeof l.remainingCost !== "number") l.remainingCost = l.totalCost;
+
             return l;
         });
 
@@ -294,6 +299,10 @@ function linkLotToSale(saleIndex, lotId) {
 
     lot.remainingQty -= qty;
 
+    // ⭐ ADDED — update lot profit tracking
+    lot.totalProfit += sale.profit;
+    lot.remainingCost -= (lot.costPerItem * qty);
+
     Storage.save("sales", sales);
     Storage.save("parentPurchases", parentPurchases);
     Storage.save("purchases", purchases);
@@ -321,7 +330,13 @@ function unlinkPurchaseFromSale(saleIndex) {
 
     if (sale.lotId) {
         const found = findLotById(sale.lotId);
-        if (found) found.lot.remainingQty += qty;
+        if (found) {
+            found.lot.remainingQty += qty;
+
+            // ⭐ ADDED — reverse lot profit tracking
+            found.lot.totalProfit -= sale.profit;
+            found.lot.remainingCost += (found.lot.costPerItem * qty);
+        }
     }
 
     sale.purchaseId = null;
@@ -355,7 +370,13 @@ function deleteSale(index) {
 
     if (s.lotId) {
         const found = findLotById(s.lotId);
-        if (found) found.lot.remainingQty += qty;
+        if (found) {
+            found.lot.remainingQty += qty;
+
+            // ⭐ ADDED — reverse lot profit tracking
+            found.lot.totalProfit -= s.profit;
+            found.lot.remainingCost += (found.lot.costPerItem * qty);
+        }
     }
 
     sales.splice(index, 1);
@@ -370,7 +391,6 @@ function deleteSale(index) {
     renderLotTable();
     updateSummary();
 }
-
 /* -----------------------------
    SALES — RENDER TABLE
 ----------------------------- */
@@ -484,7 +504,6 @@ function handlePurchaseSelectChange(saleIndex, value) {
         return;
     }
 }
-
 /* -----------------------------
    CSV IMPORTER
 ----------------------------- */
@@ -542,6 +561,9 @@ function importCSV(file) {
     reader.readAsText(file);
 }
 
+/* -----------------------------
+   CSV PARSER
+----------------------------- */
 function parseCSVLine(line) {
     const result = [];
     let current = "";
@@ -640,7 +662,7 @@ function renderSalaryTable() {
 }
 
 /* -----------------------------
-   SALARY GOAL (HTML MATCHED)
+   SALARY GOAL
 ----------------------------- */
 function updateSalaryGoal() {
     const goal = Number(document.getElementById("salary-goal-input").value) || 0;
@@ -655,7 +677,7 @@ function loadSalaryGoal() {
 }
 
 /* -----------------------------
-   SALARY TRACKER (NEW)
+   SALARY TRACKER
 ----------------------------- */
 function updateSalaryTracker() {
     const paid = salaryEntries.reduce((s, e) => s + e.amount, 0);
@@ -675,7 +697,7 @@ function updateSalaryTracker() {
 }
 
 /* -----------------------------
-   PAY FULL SALARY (NEW)
+   PAY FULL SALARY
 ----------------------------- */
 function payFullSalary() {
     if (salaryGoal <= 0) {
@@ -703,7 +725,6 @@ function payFullSalary() {
     updateSummary();
     updateSalaryTracker();
 }
-
 /* -----------------------------
    SIMPLE PURCHASES
 ----------------------------- */
@@ -755,7 +776,6 @@ function renderPurchaseTable() {
             <td>$${p.amount.toFixed(2)}</td>
             <td>${p.qty}</td>
             <td>$${p.costPerItem.toFixed(2)}</td>
-            <td>${p.remainingQty}</td>
             <td>${p.date}</td>
             <td>${p.notes || ""}</td>
             <td><button class="delete-btn" onclick="deletePurchase(${index})">✖</button></td>
@@ -839,7 +859,7 @@ function deleteRecurring(index) {
 }
 
 /* -----------------------------
-   PARENT PURCHASE — FIXED
+   PARENT PURCHASE — ADD
 ----------------------------- */
 function addParentPurchase() {
     const sourceName = document.getElementById("pp-source").value.trim();
@@ -893,7 +913,7 @@ function selectParentPurchase(index) {
 }
 
 /* -----------------------------
-   LOTS — ADD LOT (FIXED)
+   LOTS — ADD LOT
 ----------------------------- */
 function addLot() {
     if (activeParentIndex === null) return;
@@ -918,7 +938,11 @@ function addLot() {
         premiumShare: 0,
         totalCost: 0,
         costPerItem: 0,
-        remainingQty: qty
+        remainingQty: qty,
+
+        // ⭐ ADDED — initialize lot profit fields
+        totalProfit: -(hammerPrice),
+        remainingCost: hammerPrice
     };
 
     parent.subPurchases.push(lot);
@@ -935,7 +959,7 @@ function addLot() {
 }
 
 /* -----------------------------
-   RECALC PARENT TOTALS — FIXED
+   RECALC PARENT TOTALS
 ----------------------------- */
 function recalcParentTotals(parent) {
     parent.totalHammer = parent.subPurchases.reduce((sum, l) => sum + l.hammerPrice, 0);
@@ -962,6 +986,10 @@ function recalcParentTotals(parent) {
 
         lot.totalCost = lot.hammerPrice + lot.premiumShare;
         lot.costPerItem = lot.qty > 0 ? lot.totalCost / lot.qty : 0;
+
+        // ⭐ ADDED — ensure profit fields stay synced
+        if (typeof lot.totalProfit !== "number") lot.totalProfit = -lot.totalCost;
+        if (typeof lot.remainingCost !== "number") lot.remainingCost = lot.totalCost;
     });
 
     parent.totalQty = parent.subPurchases.reduce((sum, l) => sum + l.qty, 0);
@@ -970,7 +998,7 @@ function recalcParentTotals(parent) {
 }
 
 /* -----------------------------
-   LOT TABLE
+   LOT TABLE — WITH PROFIT COLUMNS
 ----------------------------- */
 function renderLotTable() {
     const tbody = document.getElementById("lot-table-body");
@@ -990,6 +1018,11 @@ function renderLotTable() {
             <td>$${lot.totalCost.toFixed(2)}</td>
             <td>$${lot.costPerItem.toFixed(2)}</td>
             <td>${lot.remainingQty}</td>
+
+            <!-- ⭐ NEW PROFIT COLUMNS -->
+            <td>$${lot.totalProfit.toFixed(2)}</td>
+            <td>$${lot.remainingCost.toFixed(2)}</td>
+
             <td><button class="delete-btn" onclick="deleteLot(${index})">✖</button></td>
         `;
 
@@ -1052,7 +1085,6 @@ function renderParentPurchaseTable() {
         tbody.appendChild(row);
     });
 }
-
 /* -----------------------------
    SUMMARY CALCULATIONS
 ----------------------------- */
@@ -1093,7 +1125,6 @@ function updateSummary() {
 
 /* -----------------------------
    DOWNLOAD MONTHLY CSV (B2SS2B)
-   (TOTALS ONLY, FOR BUTTON + FINALIZE)
 ----------------------------- */
 function downloadMonthlyCSV(summary) {
     const headers = [
@@ -1128,7 +1159,7 @@ function downloadMonthlyCSV(summary) {
 
     const csvContent = headers.join(",") + "\n" + values.join(",");
 
-    const month = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const month = new Date().toISOString().slice(0, 7);
     const filename = `B2SS2B_${month}.csv`;
 
     const blob = new Blob([csvContent], { type: "text/csv" });
@@ -1143,7 +1174,7 @@ function downloadMonthlyCSV(summary) {
 }
 
 /* -----------------------------
-   TRIGGER CSV DOWNLOAD (BUTTON)
+   TRIGGER CSV DOWNLOAD
 ----------------------------- */
 function triggerCSVDownload() {
     const totalSales = sales.reduce((s, x) => s + x.total, 0);
@@ -1244,23 +1275,11 @@ function finalizeMonth() {
     };
     downloadMonthlyCSV(csvSummary);
 
-    // IMPORTANT: keep recurringExpenses so Monthly Recurring stays every month
-    // ❌ OLD (bad):
-    // sales = [];
-    // purchases = [];
-    // parentPurchases = [];
-    // salaryEntries = [];
-
-    // ✅ NEW (safe): clear ONLY sales + salary
     sales = [];
     salaryEntries = [];
 
     Storage.save("sales", sales);
     Storage.save("salaryEntries", salaryEntries);
-
-    // DO NOT clear purchases or parentPurchases:
-    // Storage.save("purchases", purchases);
-    // Storage.save("parentPurchases", parentPurchases);
 
     renderSalesTable();
     renderPurchaseTable();
@@ -1272,7 +1291,6 @@ function finalizeMonth() {
 
     alert("Month finalized and archived!");
 }
-
 
 /* -----------------------------
    RENDER ARCHIVE LIST
@@ -1303,6 +1321,9 @@ function renderArchive() {
     });
 }
 
+/* -----------------------------
+   RESTORE PARENT PURCHASES FROM ARCHIVE
+----------------------------- */
 function restoreParentPurchasesFromArchive(monthName) {
     const archive = archiveMonths.find(a => a.name === monthName);
     if (!archive) {
@@ -1310,11 +1331,9 @@ function restoreParentPurchasesFromArchive(monthName) {
         return;
     }
 
-    // Restore parent purchases + lots
     parentPurchases = JSON.parse(JSON.stringify(archive.parentPurchases));
     Storage.save("parentPurchases", parentPurchases);
 
-    // Restore simple purchases too (optional)
     purchases = JSON.parse(JSON.stringify(archive.purchases));
     Storage.save("purchases", purchases);
 
