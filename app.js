@@ -303,6 +303,9 @@ function linkLotToSale(saleIndex, lotId) {
     lot.totalProfit += sale.profit;
     lot.remainingCost -= (lot.costPerItem * qty);
 
+    // ⭐ REQUIRED — recalc parent + lot math
+    recalcParentTotals(parent);
+
     Storage.save("sales", sales);
     Storage.save("parentPurchases", parentPurchases);
     Storage.save("purchases", purchases);
