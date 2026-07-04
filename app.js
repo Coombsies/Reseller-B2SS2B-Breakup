@@ -101,7 +101,7 @@ function normalizeData() {
             }
             if (typeof l.remainingQty !== "number") l.remainingQty = l.qty;
 
-            // ⭐ ADDED — initialize lot profit tracking
+            // ⭐ ADDED — initialize lot profit tracking (TEMPORARY)
             if (typeof l.totalProfit !== "number") l.totalProfit = -l.totalCost;
             if (typeof l.remainingCost !== "number") l.remainingCost = l.totalCost;
 
@@ -200,70 +200,6 @@ function addSale() {
 }
 
 /* -----------------------------
-   SALES — INLINE COGS UPDATE
------------------------------ */
-function updateCogsInline(index, newValue) {
-    const s = sales[index];
-    const newCogs = Number(newValue);
-
-    if (isNaN(newCogs)) return;
-
-    s.cogs = newCogs;
-    s.profit = s.total - s.sellingCost - s.cogs;
-    s.autoCogs = false;
-
-    Storage.save("sales", sales);
-    renderSalesTable();
-    updateSummary();
-}
-
-/* -----------------------------
-   SALES — LINK SIMPLE PURCHASE
------------------------------ */
-function linkPurchaseToSale(saleIndex, purchaseId) {
-    const sale = sales[saleIndex];
-    const purchase = findPurchaseById(purchaseId);
-
-    if (!sale || !purchase) return;
-
-    const qty = sale.qty || 0;
-
-    if (purchase.remainingQty < qty) {
-        alert("Not enough remaining quantity in that purchase.");
-        return;
-    }
-
-    if (sale.purchaseId) {
-        const old = findPurchaseById(sale.purchaseId);
-        if (old) old.remainingQty += qty;
-    }
-
-    if (sale.lotId) {
-        const found = findLotById(sale.lotId);
-        if (found) found.lot.remainingQty += qty;
-    }
-
-    sale.purchaseId = purchase.id;
-    sale.lotId = null;
-    sale.autoCogs = true;
-
-    sale.cogs = purchase.costPerItem * qty;
-    sale.profit = sale.total - sale.sellingCost - sale.cogs;
-
-    purchase.remainingQty -= qty;
-
-    Storage.save("sales", sales);
-    Storage.save("purchases", purchases);
-    Storage.save("parentPurchases", parentPurchases);
-
-    renderSalesTable();
-    renderPurchaseTable();
-    renderParentPurchaseTable();
-    renderLotTable();
-    updateSummary();
-}
-
-/* -----------------------------
    SALES — LINK LOT TO SALE
 ----------------------------- */
 function linkLotToSale(saleIndex, lotId) {
@@ -339,6 +275,9 @@ function unlinkPurchaseFromSale(saleIndex) {
             // ⭐ ADDED — reverse lot profit tracking
             found.lot.totalProfit -= sale.profit;
             found.lot.remainingCost += (found.lot.costPerItem * qty);
+
+            // ⭐ KEEP LOT MATH IN SYNC
+            recalcParentTotals(found.parent);
         }
     }
 
@@ -379,6 +318,9 @@ function deleteSale(index) {
             // ⭐ ADDED — reverse lot profit tracking
             found.lot.totalProfit -= s.profit;
             found.lot.remainingCost += (found.lot.costPerItem * qty);
+
+            // ⭐ KEEP LOT MATH IN SYNC
+            recalcParentTotals(found.parent);
         }
     }
 
@@ -394,6 +336,7 @@ function deleteSale(index) {
     renderLotTable();
     updateSummary();
 }
+
 /* -----------------------------
    SALES — RENDER TABLE
 ----------------------------- */
@@ -507,6 +450,7 @@ function handlePurchaseSelectChange(saleIndex, value) {
         return;
     }
 }
+
 /* -----------------------------
    CSV IMPORTER
 ----------------------------- */
@@ -728,6 +672,7 @@ function payFullSalary() {
     updateSummary();
     updateSalaryTracker();
 }
+
 /* -----------------------------
    SIMPLE PURCHASES
 ----------------------------- */
@@ -794,7 +739,6 @@ function deletePurchase(index) {
     renderPurchaseTable();
     updateSummary();
 }
-
 /* -----------------------------
    RECURRING EXPENSES — ADD
 ----------------------------- */
@@ -943,7 +887,7 @@ function addLot() {
         costPerItem: 0,
         remainingQty: qty,
 
-        // ⭐ ADDED — initialize lot profit fields
+        // ⭐ INITIAL TEMP VALUES — corrected after recalc
         totalProfit: -(hammerPrice),
         remainingCost: hammerPrice
     };
@@ -951,6 +895,10 @@ function addLot() {
     parent.subPurchases.push(lot);
 
     recalcParentTotals(parent);
+
+    // ⭐ FINAL CORRECTED PROFIT MATH — uses totalCost, not hammerPrice
+    lot.totalProfit = -lot.totalCost;
+    lot.remainingCost = lot.totalCost;
 
     Storage.save("parentPurchases", parentPurchases);
     renderParentPurchaseTable();
@@ -990,7 +938,7 @@ function recalcParentTotals(parent) {
         lot.totalCost = lot.hammerPrice + lot.premiumShare;
         lot.costPerItem = lot.qty > 0 ? lot.totalCost / lot.qty : 0;
 
-        // ⭐ ADDED — ensure profit fields stay synced
+        // ⭐ ensure profit fields stay synced
         if (typeof lot.totalProfit !== "number") lot.totalProfit = -lot.totalCost;
         if (typeof lot.remainingCost !== "number") lot.remainingCost = lot.totalCost;
     });
@@ -1088,6 +1036,7 @@ function renderParentPurchaseTable() {
         tbody.appendChild(row);
     });
 }
+
 /* -----------------------------
    SUMMARY CALCULATIONS
 ----------------------------- */
