@@ -448,7 +448,7 @@ function handlePurchaseSelectChange(saleIndex, value) {
 }
 
 /* -----------------------------
-   CSV IMPORTER (FIXED)
+   CSV IMPORTER (CORRECTED)
 ----------------------------- */
 function importCSV(file) {
     if (!file) return;
@@ -473,10 +473,14 @@ function importCSV(file) {
             const item = (r[0] || "").trim();
             if (!item) continue;
 
+            // ⭐ YOUR REAL CSV COLUMN ORDER:
+            // 0 = Listing title
+            // 1 = Quantity sold
+            // 2 = Total sales (Includes taxes)
+            // 3 = Total selling costs
+
             const qty = toNumber(r[1]);
             const totalSale = toNumber(r[2]);
-
-            // ⭐ FIXED — selling cost is column 3, not 8
             const sellingCost = toNumber(r[3]);
 
             const cogs = 0;
@@ -506,6 +510,7 @@ function importCSV(file) {
 
     reader.readAsText(file);
 }
+
 /* -----------------------------
    CSV PARSER
 ----------------------------- */
