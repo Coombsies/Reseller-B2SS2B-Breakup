@@ -295,6 +295,26 @@ function unlinkPurchaseFromSale(saleIndex) {
     renderLotTable();
     updateSummary();
 }
+/* -----------------------------
+   SALES — INLINE COGS UPDATE
+----------------------------- */
+function updateCogsInline(index, newCogs) {
+    const sale = sales[index];
+    if (!sale) return;
+
+    const cogs = Number(newCogs) || 0;
+    sale.cogs = cogs;
+
+    // ⭐ FIX: Recalculate profit correctly
+    sale.profit = sale.total - sale.sellingCost - sale.cogs;
+
+    // Manual COGS overrides autoCogs
+    sale.autoCogs = false;
+
+    Storage.save("sales", sales);
+    renderSalesTable();
+    updateSummary();
+}
 
 /* -----------------------------
    SALES — DELETE
