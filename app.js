@@ -742,6 +742,54 @@ function deletePurchase(index) {
     renderPurchaseTable();
     updateSummary();
 }
+/* -----------------------------
+   SALES — LINK SIMPLE PURCHASE TO SALE
+----------------------------- */
+function linkPurchaseToSale(saleIndex, purchaseId) {
+    const sale = sales[saleIndex];
+    const p = findPurchaseById(purchaseId);
+
+    if (!sale || !p) return;
+
+    const qty = sale.qty || 0;
+
+    if (p.remainingQty < qty) {
+        alert("Not enough remaining quantity in that purchase.");
+        return;
+    }
+
+    // Undo previous links
+    if (sale.purchaseId && sale.purchaseId !== p.id) {
+        const old = findPurchaseById(sale.purchaseId);
+        if (old) old.remainingQty += qty;
+    }
+    if (sale.lotId) {
+        const oldLot = findLotById(sale.lotId);
+        if (oldLot) oldLot.lot.remainingQty += qty;
+    }
+
+    // Link to this purchase
+    sale.purchaseId = p.id;
+    sale.lotId = null;
+    sale.autoCogs = true;
+
+    // ⭐ Correct COGS + PROFIT calculation
+    sale.cogs = p.costPerItem * qty;
+    sale.profit = sale.total - sale.sellingCost - sale.cogs;
+
+    // Reduce remaining qty
+    p.remainingQty -= qty;
+
+    Storage.save("sales", sales);
+    Storage.save("purchases", purchases);
+    Storage.save("parentPurchases", parentPurchases);
+
+    renderSalesTable();
+    renderPurchaseTable();
+    renderParentPurchaseTable();
+    renderLotTable();
+    updateSummary();
+}
 
 /* -----------------------------
    RECURRING EXPENSES — ADD
