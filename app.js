@@ -198,7 +198,6 @@ function addSale() {
     document.getElementById("manual-date").value = "";
     document.getElementById("manual-notes").value = "";
 }
-
 /* -----------------------------
    SALES — LINK LOT TO SALE
 ----------------------------- */
@@ -272,11 +271,10 @@ function unlinkPurchaseFromSale(saleIndex) {
         if (found) {
             found.lot.remainingQty += qty;
 
-            // ⭐ ADDED — reverse lot profit tracking
+            // ⭐ reverse lot profit tracking
             found.lot.totalProfit -= sale.profit;
             found.lot.remainingCost += (found.lot.costPerItem * qty);
 
-            // ⭐ KEEP LOT MATH IN SYNC
             recalcParentTotals(found.parent);
         }
     }
@@ -315,11 +313,9 @@ function deleteSale(index) {
         if (found) {
             found.lot.remainingQty += qty;
 
-            // ⭐ ADDED — reverse lot profit tracking
             found.lot.totalProfit -= s.profit;
             found.lot.remainingCost += (found.lot.costPerItem * qty);
 
-            // ⭐ KEEP LOT MATH IN SYNC
             recalcParentTotals(found.parent);
         }
     }
@@ -452,7 +448,7 @@ function handlePurchaseSelectChange(saleIndex, value) {
 }
 
 /* -----------------------------
-   CSV IMPORTER
+   CSV IMPORTER (FIXED)
 ----------------------------- */
 function importCSV(file) {
     if (!file) return;
@@ -472,14 +468,17 @@ function importCSV(file) {
 
         for (let i = headerIndex + 1; i < rows.length; i++) {
             const r = rows[i];
-            if (!r || r.length < 9) continue;
+            if (!r || r.length < 4) continue;
 
             const item = (r[0] || "").trim();
             if (!item) continue;
 
-            const qty = toNumber(r[2]);
-            const totalSale = toNumber(r[3]);
-            const sellingCost = toNumber(r[8]);
+            const qty = toNumber(r[1]);
+            const totalSale = toNumber(r[2]);
+
+            // ⭐ FIXED — selling cost is column 3, not 8
+            const sellingCost = toNumber(r[3]);
+
             const cogs = 0;
             const profit = totalSale - sellingCost - cogs;
 
@@ -507,7 +506,6 @@ function importCSV(file) {
 
     reader.readAsText(file);
 }
-
 /* -----------------------------
    CSV PARSER
 ----------------------------- */
@@ -739,6 +737,7 @@ function deletePurchase(index) {
     renderPurchaseTable();
     updateSummary();
 }
+
 /* -----------------------------
    RECURRING EXPENSES — ADD
 ----------------------------- */
@@ -770,7 +769,6 @@ function addRecurring() {
     document.getElementById("rec-due").value = "";
     document.getElementById("rec-notes").value = "";
 }
-
 /* -----------------------------
    RECURRING EXPENSES — RENDER
 ----------------------------- */
@@ -1005,7 +1003,6 @@ function deleteParentPurchase(index) {
 
     document.getElementById("lot-section").style.display = "none";
 }
-
 /* -----------------------------
    RENDER PARENT PURCHASE TABLE
 ----------------------------- */
