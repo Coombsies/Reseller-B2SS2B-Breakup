@@ -530,6 +530,14 @@ function importCSV(file) {
                 autoCogs: true
             });
         }
+
+        Storage.save("sales", sales);
+        renderSalesTable();
+        updateSummary();
+    };
+
+    reader.readAsText(file);
+}
 /* -----------------------------
    CSV PARSER
 ----------------------------- */
@@ -896,6 +904,7 @@ function deleteRecurring(index) {
     renderRecurringTable();
     updateSummary();
 }
+
 /* -----------------------------
    PARENT PURCHASE — ADD
 ----------------------------- */
@@ -999,7 +1008,6 @@ function addLot() {
     document.getElementById("lot-hammer").value = "";
     document.getElementById("lot-qty").value = "";
 }
-
 /* -----------------------------
    RECALC PARENT TOTALS
 ----------------------------- */
