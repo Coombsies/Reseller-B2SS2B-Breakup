@@ -111,9 +111,16 @@ function normalizeData() {
         return p;
     });
 
+    // ⭐ NEW — normalize recurringExpenses.paid
+    recurringExpenses = recurringExpenses.map(r => {
+        if (typeof r.paid !== "boolean") r.paid = false;
+        return r;
+    });
+
     Storage.save("purchases", purchases);
     Storage.save("sales", sales);
     Storage.save("parentPurchases", parentPurchases);
+    Storage.save("recurringExpenses", recurringExpenses);
 }
 
 /* -----------------------------
@@ -198,6 +205,7 @@ function addSale() {
     document.getElementById("manual-date").value = "";
     document.getElementById("manual-notes").value = "";
 }
+
 /* -----------------------------
    SALES — LINK LOT TO SALE
 ----------------------------- */
@@ -295,6 +303,7 @@ function unlinkPurchaseFromSale(saleIndex) {
     renderLotTable();
     updateSummary();
 }
+
 /* -----------------------------
    SALES — INLINE COGS UPDATE
 ----------------------------- */
@@ -521,16 +530,6 @@ function importCSV(file) {
                 autoCogs: true
             });
         }
-
-        Storage.save("sales", sales);
-        renderSalesTable();
-        updateSummary();
-        alert("CSV Imported Successfully!");
-    };
-
-    reader.readAsText(file);
-}
-
 /* -----------------------------
    CSV PARSER
 ----------------------------- */
@@ -762,6 +761,7 @@ function deletePurchase(index) {
     renderPurchaseTable();
     updateSummary();
 }
+
 /* -----------------------------
    SALES — LINK SIMPLE PURCHASE TO SALE
 ----------------------------- */
@@ -830,7 +830,8 @@ function addRecurring() {
         name,
         amount,
         due,
-        notes
+        notes,
+        paid: false   // ⭐ NEW FIELD
     });
 
     Storage.save("recurringExpenses", recurringExpenses);
@@ -842,8 +843,9 @@ function addRecurring() {
     document.getElementById("rec-due").value = "";
     document.getElementById("rec-notes").value = "";
 }
+
 /* -----------------------------
-   RECURRING EXPENSES — RENDER
+   RECURRING EXPENSES — RENDER (PATCHED)
 ----------------------------- */
 function renderRecurringTable() {
     const tbody = document.getElementById("recurring-table-body");
@@ -859,11 +861,30 @@ function renderRecurringTable() {
             <td>$${r.amount.toFixed(2)}</td>
             <td>${r.due}</td>
             <td>${r.notes || ""}</td>
-            <td><button class="delete-btn" onclick="deleteRecurring(${index})">✖</button></td>
+            <td>
+                <input type="checkbox"
+                       ${r.paid ? "checked" : ""}
+                       onchange="toggleRecurringPaid(${index})">
+                <button class="delete-btn" onclick="deleteRecurring(${index})">✖</button>
+            </td>
         `;
 
         tbody.appendChild(row);
     });
+}
+
+/* -----------------------------
+   RECURRING EXPENSES — TOGGLE PAID (NEW)
+----------------------------- */
+function toggleRecurringPaid(index) {
+    const r = recurringExpenses[index];
+    if (!r) return;
+
+    r.paid = !r.paid;
+
+    Storage.save("recurringExpenses", recurringExpenses);
+    renderRecurringTable();
+    updateSummary();
 }
 
 /* -----------------------------
@@ -875,7 +896,6 @@ function deleteRecurring(index) {
     renderRecurringTable();
     updateSummary();
 }
-
 /* -----------------------------
    PARENT PURCHASE — ADD
 ----------------------------- */
@@ -1076,6 +1096,7 @@ function deleteParentPurchase(index) {
 
     document.getElementById("lot-section").style.display = "none";
 }
+
 /* -----------------------------
    RENDER PARENT PURCHASE TABLE
 ----------------------------- */
@@ -1118,7 +1139,9 @@ function updateSummary() {
     const totalPurchases = purchases.reduce((s, p) => s + p.amount, 0)
         + parentPurchases.reduce((s, p) => s + p.totalCost, 0);
 
+    // ⭐ You chose OPTION A — count ALL recurring bills
     const totalRecurring = recurringExpenses.reduce((s, r) => s + r.amount, 0);
+
     const salaryPaid = salaryEntries.reduce((s, e) => s + e.amount, 0);
 
     const netProfit = salesProfit - totalPurchases - totalRecurring - salaryPaid;
