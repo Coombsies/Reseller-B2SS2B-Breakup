@@ -63,8 +63,19 @@ let startingBalance = Storage.load("startingBalance", 0); // carry-over savings 
    DATA NORMALIZATION
 ----------------------------- */
 function normalizeData() {
+    // IDs already counted in an archived month (migration for data saved
+    // before the counted flag existed — archived purchases must never be
+    // counted again in a later month's totals)
+    const archivedPurchaseIds = new Set();
+    const archivedParentIds = new Set();
+    archiveMonths.forEach(a => {
+        (a.purchases || []).forEach(p => { if (p.id) archivedPurchaseIds.add(p.id); });
+        (a.parentPurchases || []).forEach(p => { if (p.id) archivedParentIds.add(p.id); });
+    });
+
     purchases = purchases.map(p => {
         if (!p.id) p.id = crypto.randomUUID();
+        if (typeof p.counted !== "boolean") p.counted = archivedPurchaseIds.has(p.id);
         if (typeof p.remainingQty !== "number") {
             p.remainingQty = typeof p.qty === "number" ? p.qty : 0;
         }
@@ -73,6 +84,7 @@ function normalizeData() {
 
     sales = sales.map(s => {
         if (!s.id) s.id = crypto.randomUUID();
+        if (typeof s.platform === "undefined") s.platform = "";
         if (typeof s.purchaseId === "undefined") s.purchaseId = null;
         if (typeof s.autoCogs === "undefined") s.autoCogs = false;
         return s;
@@ -80,6 +92,7 @@ function normalizeData() {
 
     parentPurchases = parentPurchases.map(p => {
         if (!p.id) p.id = crypto.randomUUID();
+        if (typeof p.counted !== "boolean") p.counted = archivedParentIds.has(p.id);
         if (!Array.isArray(p.subPurchases)) p.subPurchases = [];
         if (typeof p.buyerPremiumPercent !== "number") p.buyerPremiumPercent = 0;
         if (typeof p.buyerPremiumAmount !== "number") p.buyerPremiumAmount = 0;
@@ -170,6 +183,8 @@ function addSale() {
     const cogs = Number(document.getElementById("manual-cogs").value) || 0;
     const date = document.getElementById("manual-date").value.trim();
     const notes = document.getElementById("manual-notes").value.trim();
+    const platformEl = document.getElementById("manual-platform");
+    const platform = platformEl ? platformEl.value : "";
 
     if (!item || qty <= 0 || total <= 0) {
         alert("Please enter Item, Qty, and Total Sale Price.");
@@ -188,6 +203,7 @@ function addSale() {
         profit,
         date,
         notes,
+        platform,
         purchaseId: null,
         lotId: null,
         autoCogs: cogs === 0
@@ -204,6 +220,7 @@ function addSale() {
     document.getElementById("manual-cogs").value = "";
     document.getElementById("manual-date").value = "";
     document.getElementById("manual-notes").value = "";
+    if (platformEl) platformEl.value = "";
 }
 
 /* -----------------------------
@@ -410,6 +427,7 @@ function renderSalesTable() {
 
         row.innerHTML = `
             <td>${s.item}</td>
+            <td>${s.platform || ""}</td>
             <td>${s.qty}</td>
             <td>$${s.total.toFixed(2)}</td>
             <td>$${s.sellingCost.toFixed(2)}</td>
@@ -525,6 +543,7 @@ function importCSV(file) {
                 profit,
                 date: "",
                 notes: "",
+                platform: "eBay",
                 purchaseId: null,
                 lotId: null,
                 autoCogs: true
@@ -728,7 +747,8 @@ function addPurchase() {
         remainingQty: qty,
         costPerItem,
         date,
-        notes
+        notes,
+        counted: false
     });
 
     Storage.save("purchases", purchases);
@@ -930,6 +950,7 @@ function addParentPurchase() {
         totalCost: premiumAmount,
         totalQty: 0,
         costPerItem: 0,
+        counted: false,
         subPurchases: []
     };
 
@@ -1144,8 +1165,8 @@ function updateSummary() {
     const totalCogs = sales.reduce((s, x) => s + x.cogs, 0);
     const salesProfit = totalSales - totalCogs;
 
-    const totalPurchases = purchases.reduce((s, p) => s + p.amount, 0)
-        + parentPurchases.reduce((s, p) => s + p.totalCost, 0);
+    const totalPurchases = purchases.filter(p => !p.counted).reduce((s, p) => s + p.amount, 0)
+        + parentPurchases.filter(p => !p.counted).reduce((s, p) => s + p.totalCost, 0);
 
     // ⭐ You chose OPTION A — count ALL recurring bills
     const totalRecurring = recurringExpenses.reduce((s, r) => s + r.amount, 0);
@@ -1167,6 +1188,21 @@ function updateSummary() {
 
     document.getElementById("sum75").textContent = `$${sourcingAmount.toFixed(2)}`;
     document.getElementById("sum25").textContent = `$${savingsAmount.toFixed(2)}`;
+
+    const platEl = document.getElementById("sumByPlatform");
+    if (platEl) {
+        const byPlat = {};
+        sales.forEach(s => {
+            const k = s.platform || "Unspecified";
+            if (!byPlat[k]) byPlat[k] = { count: 0, total: 0 };
+            byPlat[k].count += 1;
+            byPlat[k].total += s.total || 0;
+        });
+        const keys = Object.keys(byPlat).sort((a, b) => byPlat[b].total - byPlat[a].total);
+        platEl.innerHTML = keys.length
+            ? keys.map(k => `${k}: $${byPlat[k].total.toFixed(2)} (${byPlat[k].count} sale${byPlat[k].count === 1 ? "" : "s"})`).join("<br>")
+            : "$0.00";
+    }
 
     const sbEl = document.getElementById("sumStartingBalance");
     if (sbEl) {
@@ -1234,8 +1270,8 @@ function triggerCSVDownload() {
     const totalCogs = sales.reduce((s, x) => s + x.cogs, 0);
     const salesProfit = totalSales - totalCogs;
 
-    const totalPurchases = purchases.reduce((s, p) => s + p.amount, 0)
-        + parentPurchases.reduce((s, p) => s + p.totalCost, 0);
+    const totalPurchases = purchases.filter(p => !p.counted).reduce((s, p) => s + p.amount, 0)
+        + parentPurchases.filter(p => !p.counted).reduce((s, p) => s + p.totalCost, 0);
 
     const totalRecurring = recurringExpenses.reduce((s, r) => s + r.amount, 0);
     const salaryPaid = salaryEntries.reduce((s, e) => s + e.amount, 0);
@@ -1263,6 +1299,72 @@ function triggerCSVDownload() {
     downloadMonthlyCSV(summary);
 }
 
+
+/* -----------------------------
+   LINE-ITEM BACKUP CSV (all detail rows, incl. archives)
+----------------------------- */
+function csvCell(v) {
+    if (v === null || typeof v === "undefined") v = "";
+    v = String(v);
+    return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+
+function downloadBackupCSV() {
+    const rows = [["Type", "Month", "Date", "Item / Name", "Platform", "Qty", "Total", "Selling Cost", "COGS / Premium", "Profit", "Counted", "Notes"]];
+
+    function saleRow(type, month, s) {
+        rows.push([type, month, s.date || "", s.item || "", s.platform || "", s.qty || 0,
+            (s.total || 0).toFixed(2), (s.sellingCost || 0).toFixed(2), (s.cogs || 0).toFixed(2),
+            (s.profit || 0).toFixed(2), "", s.notes || ""]);
+    }
+    function purchaseRow(type, month, p) {
+        rows.push([type, month, p.date || "", p.item || "", "", p.qty || 0,
+            (p.amount || 0).toFixed(2), "", "", "", p.counted ? "yes" : "no", p.notes || ""]);
+    }
+    function parentRow(type, month, p) {
+        rows.push([type, month, p.date || "", p.sourceName || "", "", p.totalQty || 0,
+            (p.totalCost || 0).toFixed(2), "", (p.totalPremium || 0).toFixed(2), "",
+            p.counted ? "yes" : "no", "Buyer premium %: " + (p.buyerPremiumPercent || 0)]);
+        (p.subPurchases || []).forEach(l => {
+            rows.push(["LOT", month, p.date || "", "Lot " + (l.lotNumber || "") + " (" + (p.sourceName || "") + ")", "",
+                l.qty || 0, (l.totalCost || 0).toFixed(2), "", (l.premiumShare || 0).toFixed(2),
+                (l.totalProfit || 0).toFixed(2), "", "Remaining qty: " + (l.remainingQty || 0)]);
+        });
+    }
+    function recurringRow(type, month, r) {
+        rows.push([type, month, "", r.name || "", "", "", (r.amount || 0).toFixed(2),
+            "", "", "", "", "Due day: " + (r.dueDay || "") + " " + (r.notes || "")]);
+    }
+    function salaryRow(type, month, e) {
+        rows.push([type, month, e.date || "", "Salary", "", "", (e.amount || 0).toFixed(2),
+            "", "", "", "", e.notes || ""]);
+    }
+
+    sales.forEach(s => saleRow("SALE", "current", s));
+    purchases.forEach(p => purchaseRow("PURCHASE", "current", p));
+    parentPurchases.forEach(p => parentRow("PARENT_PURCHASE", "current", p));
+    recurringExpenses.forEach(r => recurringRow("RECURRING", "current", r));
+    salaryEntries.forEach(e => salaryRow("SALARY", "current", e));
+
+    archiveMonths.forEach(a => {
+        (a.sales || []).forEach(s => saleRow("ARCHIVE_SALE", a.name, s));
+        (a.purchases || []).forEach(p => purchaseRow("ARCHIVE_PURCHASE", a.name, p));
+        (a.parentPurchases || []).forEach(p => parentRow("ARCHIVE_PARENT_PURCHASE", a.name, p));
+        (a.recurringExpenses || []).forEach(r => recurringRow("ARCHIVE_RECURRING", a.name, r));
+        (a.salaryEntries || []).forEach(e => salaryRow("ARCHIVE_SALARY", a.name, e));
+    });
+
+    const csvContent = rows.map(r => r.map(csvCell).join(",")).join("\n");
+    const filename = `B2SS2B_backup_${new Date().toISOString().slice(0, 10)}.csv`;
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 /* -----------------------------
    FINALIZE MONTH
 ----------------------------- */
@@ -1274,8 +1376,8 @@ function finalizeMonth() {
     const totalCogs = sales.reduce((s, x) => s + x.cogs, 0);
     const salesProfit = totalSales - totalCogs;
 
-    const totalPurchases = purchases.reduce((s, p) => s + p.amount, 0)
-        + parentPurchases.reduce((s, p) => s + p.totalCost, 0);
+    const totalPurchases = purchases.filter(p => !p.counted).reduce((s, p) => s + p.amount, 0)
+        + parentPurchases.filter(p => !p.counted).reduce((s, p) => s + p.totalCost, 0);
 
     const totalRecurring = recurringExpenses.reduce((s, r) => s + r.amount, 0);
     const salaryPaid = salaryEntries.reduce((s, e) => s + e.amount, 0);
@@ -1308,6 +1410,13 @@ function finalizeMonth() {
 
     archiveMonths.push(archive);
     Storage.save("archiveMonths", archiveMonths);
+
+    // Mark this month's purchases as counted so they stay available for
+    // inventory/COGS linking but are never counted in a later month.
+    purchases.forEach(p => { p.counted = true; });
+    parentPurchases.forEach(p => { p.counted = true; });
+    Storage.save("purchases", purchases);
+    Storage.save("parentPurchases", parentPurchases);
 
     startingBalance = savingsAmount;
     Storage.save("startingBalance", startingBalance);
