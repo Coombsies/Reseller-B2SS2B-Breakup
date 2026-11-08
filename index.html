@@ -59,6 +59,19 @@
                         <input type="text" id="manual-notes">
                     </label>
 
+                    <label>Platform
+                        <select id="manual-platform">
+                            <option value=""></option>
+                            <option value="eBay">eBay</option>
+                            <option value="Vinted">Vinted</option>
+                            <option value="Facebook Marketplace">Facebook Marketplace</option>
+                            <option value="Depop">Depop</option>
+                            <option value="Whatnot">Whatnot</option>
+                            <option value="Poshmark">Poshmark</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </label>
+
                 </div>
 
                 <button class="action-btn" onclick="addSale()">Add Sale</button>
@@ -76,6 +89,7 @@
                     <thead>
                         <tr>
                             <th>Item</th>
+                            <th>Platform</th>
                             <th>Qty</th>
                             <th>Total Sale Price</th>
                             <th>Selling Cost</th>
@@ -331,7 +345,7 @@
                     <p id="sumTotalCOGS">$0.00</p>
                 </div>
                 <div class="summary-card">
-                    <h3Sales Profit</h3>
+                    <h3>Sales Profit</h3>
                     <p id="sumSalesProfit">$0.00</p>
                 </div>
                 <div class="summary-card">
@@ -385,6 +399,13 @@
             <!-- ⭐ ADDED BUTTON ⭐ -->
             <button class="action-btn" onclick="triggerCSVDownload()">Download CSV (B2SS2B)</button>
 
+            <button class="action-btn" onclick="downloadBackupCSV()">Download Line-Item Backup (CSV)</button>
+
+            <div class="summary-card" style="margin-top:20px;">
+                <h3>Sales by Platform (this month)</h3>
+                <p id="sumByPlatform">$0.00</p>
+            </div>
+
             <button class="danger-btn" onclick="finalizeMonth()">Finalize Month</button>
 
             <div class="card">
@@ -395,6 +416,6 @@
 
     </main>
 
-    <script src="app.js?v=3"></script>
+    <script src="app.js?v=4"></script>
 </body>
 </html>
