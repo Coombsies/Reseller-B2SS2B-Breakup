@@ -503,13 +503,39 @@ function importCSV(file) {
     const reader = new FileReader();
 
     reader.onload = function (e) {
-        const text = e.target.result;
+        const text = e.target.result.replace(/^\uFEFF/, "");
         const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
         const rows = lines.map(line => parseCSVLine(line));
 
-        const headerIndex = rows.findIndex(r => r[0] === "Listing title");
-        if (headerIndex === -1) {
-            alert("CSV format not recognized.");
+        // Find columns BY HEADER NAME, wherever they sit in the row.
+        // eBay shifts its report layout around; fixed positions break.
+        const norm = s => (s || "").trim().toLowerCase().replace(/\s+/g, " ");
+        let headerIndex = -1;
+        let col = null;
+
+        for (let i = 0; i < rows.length; i++) {
+            const cells = rows[i].map(norm);
+            const titleC = cells.findIndex(c => c === "listing title" || c === "item title" || c === "title");
+            if (titleC === -1) continue;
+
+            const qtyC = cells.findIndex(c =>
+                c === "quantity sold" || c === "quantity" || c === "qty" || c === "qty sold" || c === "quantity purchased");
+            const totalC = cells.findIndex(c =>
+                c.startsWith("total sales") || c.startsWith("total sale") || c === "sold price" || c.startsWith("total sold"));
+            const costC = cells.findIndex(c =>
+                c.startsWith("total selling costs") || c.startsWith("selling costs") || c === "total fees");
+
+            headerIndex = i;
+            col = { title: titleC, qty: qtyC, total: totalC, cost: costC };
+            break;
+        }
+
+        if (headerIndex === -1 || !col || col.total === -1) {
+            alert("CSV format not recognized — could not find the title and total sales columns.");
+            return;
+        }
+        if (col.qty === -1) {
+            alert("Found the sales columns but no quantity column. Headers seen: " + rows[headerIndex].join(" | "));
             return;
         }
 
@@ -517,18 +543,12 @@ function importCSV(file) {
             const r = rows[i];
             if (!r || r.length < 4) continue;
 
-            const item = (r[0] || "").trim();
+            const item = (r[col.title] || "").trim();
             if (!item) continue;
 
-            // ⭐ YOUR REAL CSV COLUMN ORDER:
-            // 0 = Listing title
-            // 1 = Quantity sold
-            // 2 = Total sales (Includes taxes)
-            // 3 = Total selling costs
-
-            const qty = toNumber(r[1]);
-            const totalSale = toNumber(r[2]);
-            const sellingCost = toNumber(r[3]);
+            const qty = toNumber(r[col.qty]);
+            const totalSale = toNumber(r[col.total]);
+            const sellingCost = col.cost === -1 ? 0 : toNumber(r[col.cost]);
 
             const cogs = 0;
             const profit = totalSale - sellingCost - cogs;
